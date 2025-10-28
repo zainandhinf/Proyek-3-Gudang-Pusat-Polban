@@ -49,9 +49,13 @@ Gunakan format:
 <tipe>/<nama-fitur-singkat>
 ```
 Contoh:
+
 `fitur/crud-master-barang`
+
 `fitur/alur-pengajuan-user`
+
 `bug/fix-stok-opname`
+
 ---
 # 🚀 Project Setup (Lokal)
 
@@ -89,11 +93,11 @@ npm install
 # 💻 Menjalankan di Mode Development
 
 Anda harus menjalankan 2 server secara bersamaan di 2 terminal terpisah.
-Terminal 1 (Menjalankan Server Backend Laravel)
+- Terminal 1 (Menjalankan Server Backend Laravel)
 ```
 php artisan serve
 ```
-Terminal 2 (Menjalankan Server Frontend Vue - Vite)
+- Terminal 2 (Menjalankan Server Frontend Vue - Vite)
 ```
 npm run dev
 ```
