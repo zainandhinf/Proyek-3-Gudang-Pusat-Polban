@@ -15,8 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('nip')->unique();
             $table->string('password');
+            $table->enum('role', ['operator', 'approval', 'pemohon']);
+            $table->foreignId('unit_kerja_id')->nullable()->constrained('unit_kerjas');
+            $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
