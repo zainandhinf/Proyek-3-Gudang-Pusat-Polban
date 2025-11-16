@@ -60,7 +60,8 @@ onMounted(() => {
                 <div>
                     <div class="pt-4 border-t border-gray-200 dark:border-dark-border">
                         <div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3 px-4 dark:text-dark-muted">Master Data</div>
-                        <Link href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 w-full transition-colors dark:text-dark-muted dark:hover:bg-gray-700/30">
+                        <Link :href="route('kategori.index')" 
+                            class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 w-full transition-colors dark:text-dark-muted dark:hover:bg-gray-700/30">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M10.7812 1.22187L14.775 5.2625C16.4125 6.91875 16.4125 9.58125 14.775 11.2375L11.275 14.7781C10.9844 15.0719 10.5094 15.075 10.2156 14.7844C9.92187 14.4938 9.91875 14.0188 10.2094 13.725L13.7063 10.1844C14.7656 9.1125 14.7656 7.39062 13.7063 6.31875L9.71562 2.27813C9.425 1.98438 9.42813 1.50938 9.72188 1.21875C10.0156 0.928125 10.4906 0.93125 10.7812 1.225V1.22187ZM0 7.17188V2.5C0 1.67188 0.671875 1 1.5 1H6.17188C6.70312 1 7.2125 1.20938 7.5875 1.58438L12.8375 6.83437C13.6187 7.61562 13.6187 8.88125 12.8375 9.6625L8.66562 13.8344C7.88437 14.6156 6.61875 14.6156 5.8375 13.8344L0.5875 8.58438C0.209375 8.20938 0 7.70312 0 7.17188ZM4.5 4.5C4.5 4.23478 4.39464 3.98043 4.20711 3.79289C4.01957 3.60536 3.76522 3.5 3.5 3.5C3.23478 3.5 2.98043 3.60536 2.79289 3.79289C2.60536 3.98043 2.5 4.23478 2.5 4.5C2.5 4.76522 2.60536 5.01957 2.79289 5.20711C2.98043 5.39464 3.23478 5.5 3.5 5.5C3.76522 5.5 4.01957 5.39464 4.20711 5.20711C4.39464 5.01957 4.5 4.76522 4.5 4.5Z"/></svg>
                             <span class="text-base">Kategori</span>
                         </Link>

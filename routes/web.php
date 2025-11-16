@@ -4,6 +4,9 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\KategoriController;
+
+
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -22,6 +25,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // Kategori Routes
+    Route::get('/kategoris', [KategoriController::class, 'index'])->name('kategori.index');
+    Route::get('/kategoris/create', [KategoriController::class, 'create'])->name('kategori.create');
+    Route::post('/kategoris', [KategoriController::class, 'store'])->name('kategori.store');
+    // Route::get('/kategoris/{id}', [KategoriController::class, 'show'])->name('kategori.show');
+    // Route::get('/kategoris/{id}/edit', [KategoriController::class, 'edit'])->name('kategori.edit');
+    Route::put('/kategoris/{id}', [KategoriController::class, 'update'])->name('kategori.update');
+    // Route::delete('/kategoris/{id}', [KategoriController::class, 'destroy'])->name('kategori.destroy');
 });
 
-require __DIR__.'/auth.php';
+
+require __DIR__ . '/auth.php';
