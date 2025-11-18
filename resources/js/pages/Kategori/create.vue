@@ -21,7 +21,6 @@ const submitForm = async () => {
     resetForm();
     
   } catch (error) {
-    // Tangani error validasi atau server
     console.error('Error menyimpan data:', error.response.data);
     alert('Terjadi kesalahan: ' + error.response.data.message);
   }

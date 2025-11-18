@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SatuanController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -34,6 +35,15 @@ Route::middleware('auth')->group(function () {
     // Route::get('/kategoris/{id}/edit', [KategoriController::class, 'edit'])->name('kategori.edit');
     Route::put('/kategoris/{id}', [KategoriController::class, 'update'])->name('kategori.update');
     // Route::delete('/kategoris/{id}', [KategoriController::class, 'destroy'])->name('kategori.destroy');
+
+    // Satuan Routes
+    Route::get('/satuans', [SatuanController::class, 'index'])->name('satuans.index');
+    Route::get('/satuans/create', [SatuanController::class, 'create'])->name('satuans.create');
+    Route::post('/satuans', [SatuanController::class, 'store'])->name('satuans.store');
+    Route::get('/satuans/{satuan}/edit', [SatuanController::class, 'edit'])->name('satuans.edit');
+    Route::put('/satuans/{satuan}', [SatuanController::class, 'update'])->name('satuans.update');
+    Route::delete('/satuans/{satuan}', [SatuanController::class, 'destroy'])->name('satuans.destroy');
+
 });
 
 
