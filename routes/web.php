@@ -26,14 +26,19 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
+    // ---------------------------------------------------------------------
     // Kategori Routes
+    // ---------------------------------------------------------------------
     Route::get('/kategoris', [KategoriController::class, 'index'])->name('kategori.index');
     Route::get('/kategoris/create', [KategoriController::class, 'create'])->name('kategori.create');
     Route::post('/kategoris', [KategoriController::class, 'store'])->name('kategori.store');
-    // Route::get('/kategoris/{id}', [KategoriController::class, 'show'])->name('kategori.show');
-    // Route::get('/kategoris/{id}/edit', [KategoriController::class, 'edit'])->name('kategori.edit');
-    Route::put('/kategoris/{id}', [KategoriController::class, 'update'])->name('kategori.update');
-    // Route::delete('/kategoris/{id}', [KategoriController::class, 'destroy'])->name('kategori.destroy');
+    
+    // Route Edit & Update (menggunakan Model Binding {kategori})
+    Route::get('/kategoris/{kategori}/edit', [KategoriController::class, 'edit'])->name('kategori.edit');
+    Route::put('/kategoris/{kategori}', [KategoriController::class, 'update'])->name('kategori.update');
+    
+    // Route Destroy
+    Route::delete('/kategoris/{kategori}', [KategoriController::class, 'destroy'])->name('kategori.destroy');
 });
 
 

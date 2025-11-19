@@ -1,274 +1,149 @@
 <script setup>
-import { ref, watch } from "vue";
-import { Head, Link, router } from "@inertiajs/vue3";
-import {
-  Search,
-  Upload,
-  Plus,
-  Edit2,
-  Trash2,
-  ChevronRight,
-  ChevronLeft,
-} from "lucide-vue-next";
-// Asumsi Anda memiliki Layout. Ganti 'YourLayout' dengan nama layout Anda
-import AuthenticatedLayout from "@/layouts/AuthenticatedLayout.vue";
-import Auth from "@/actions/App/Http/Controllers/Auth";
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
+import { throttle } from 'lodash';
 
-// Mendefinisikan props yang diterima dari KategoriController
+// Props dari Controller
 const props = defineProps({
-  kategoris: Object, // Ini adalah objek paginasi dari Laravel
-  filters: Object, // Ini adalah filter pencarian
+    kategoris: Object,
+    filters: Object,
 });
 
-// State untuk input pencarian
-const search = ref(props.filters.search);
+// State pencarian
+const search = ref(props.filters?.search ?? '');
 
-let searchTimeout = null;
-watch(search, (value) => {
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    // Pastikan nama rute ini ('kategoris.index') sesuai dengan di web.php
-    router.get(
-      route("kategoris.index"),
-      { search: value },
-      {
-        preserveState: true,
-        replace: true,
-      }
-    );
-  }, 300); // Debounce 300ms
-});
+// --- SVG Icons ---
+const importIcon = `<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>`;
+const plusIcon = `<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`;
+const searchIcon = `<svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>`;
+const editIcon = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>`;
+const deleteIcon = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`;
 
-// Fungsi untuk 'Tambah Kategori' (Contoh)
-const addKategori = () => {
-  // Pastikan nama rute ini ('kategoris.create') sesuai dengan di web.php
-  router.get(route("kategori.create"));
-};
+// Search Logic (Debounce)
+watch(search, throttle((value) => {
+    router.get(route('kategori.index'), { search: value }, { preserveState: true, replace: true });
+}, 300));
 
-// Fungsi untuk 'Edit' (Contoh)
-const editKategori = (id) => {
-  // Pastikan nama rute ini ('kategoris.edit') sesuai dengan di web.php
-  router.get(route("kategoris.edit", id));
-};
-
-// Fungsi untuk 'Delete' (Contoh)
+// Delete Logic
 const deleteKategori = (id) => {
-  if (confirm("Apakah Anda yakin ingin menghapus kategori ini?")) {
-    // Pastikan nama rute ini ('kategoris.destroy') sesuai dengan di web.php
-    router.delete(route("kategoris.destroy", id), {
-      preserveScroll: true,
-    });
-  }
+    if (confirm('Apakah Anda yakin ingin menghapus kategori ini?')) {
+        router.delete(route('kategori.destroy', id));
+    }
 };
 </script>
 
 <template>
-  <Head title="Master Data Kategori" />
+    <Head title="Master Data Kategori" />
 
-  <AuthenticatedLayout>
-    <template #header>
-      <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-        Master Data Kategori
-      </h2>
-    </template>
+    <AuthenticatedLayout>
+        <template #header>
+            <h2 class="text-xl font-semibold leading-tight text-gray-800">Master Data Kategori</h2>
+        </template>
 
-  <!-- Halaman Utama -->
-  <div class="flex-1 ml-30 mt-[7px] p-8">
-    <div class="max-w-[1184px]">
-      <!-- Breadcrumbs -->
-      <div class="flex items-center gap-2 mb-6 text-sm">
-        <div class="flex items-center gap-2">
-          <!-- SVG Ikon Tag -->
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="currentColor"
-            class="text-[#6B7280]"
-          >
-            <path
-              d="M10.7812 1.22187L14.775 5.2625C16.4125 6.91875 16.4125 9.58125 14.775 11.2375L11.275 14.7781C10.9844 15.0719 10.5094 15.075 10.2156 14.7844C9.92187 14.4938 9.91875 14.0188 10.2094 13.725L13.7063 10.1844C14.7656 9.1125 14.7656 7.39062 13.7063 6.31875L9.71562 2.27813C9.425 1.98438 9.42813 1.50938 9.72188 1.21875C10.0156 0.928125 10.4906 0.93125 10.7812 1.225V1.22187ZM0 7.17188V2.5C0 1.67188 0.671875 1 1.5 1H6.17188C6.70312 1 7.2125 1.20938 7.5875 1.58438L12.8375 6.83437C13.6187 7.61562 13.6187 8.88125 12.8375 9.6625L8.66562 13.8344C7.88437 14.6156 6.61875 14.6156 5.8375 13.8344L0.5875 8.58438C0.209375 8.20938 0 7.70312 0 7.17188ZM4.5 4.5C4.5 4.23478 4.39464 3.98043 4.20711 3.79289C4.01957 3.60536 3.76522 3.5 3.5 3.5C3.23478 3.5 2.98043 3.60536 2.79289 3.79289C2.60536 3.98043 2.5 4.23478 2.5 4.5C2.5 4.76522 2.60536 5.01957 2.79289 5.20711C2.98043 5.39464 3.23478 5.5 3.5 5.5C3.76522 5.5 4.01957 5.39464 4.20711 5.20711C4.39464 5.01957 4.5 4.76522 4.5 4.5Z"
-            />
-          </svg>
-          <span class="text-[#6B7280]">Kategori</span>
-        </div>
-        <ChevronRight class="w-3 h-3 text-[#6B7280]" />
-        <span class="text-[#1D3557] font-medium">Operator Gudang</span>
-      </div>
+        <div class="py-12">
+            <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                
+                <div class="px-4 sm:px-0">
+                    <h1 class="text-3xl font-bold text-gray-800">Master Data Kategori</h1>
+                    <p class="mt-2 text-gray-600">Kelola kategori barang untuk pengelompokan inventory.</p>
+                </div>
 
-      <!-- Header Halaman -->
-      <div class="mb-10">
-        <h1 class="text-[30px] font-bold text-[#0F172A] leading-9 mb-2">
-          Master Data Kategori
-        </h1>
-        <p class="text-base text-[#475569] leading-6">Kelola kategori produk Anda</p>
-      </div>
+                <div v-if="$page.props.flash.success" class="mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+                    {{ $page.props.flash.success }}
+                </div>
+                <div v-if="$page.props.flash.error" class="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                    {{ $page.props.flash.error }}
+                </div>
 
-      <!-- Tombol Aksi -->
-      <div class="flex justify-end gap-3 mb-6">
-        <button
-          class="flex items-center gap-2 h-10 px-4 bg-[#F1F5F9] rounded-lg text-[#334155] text-base hover:bg-[#E2E8F0] transition-colors"
-        >
-          <Upload class="w-4 h-4 text-[#0D9488]" />
-          Import Excel
-        </button>
-
-        <button
-          @click="addKategori"
-          class="flex items-center gap-2 h-10 px-4 bg-[#0D9488] rounded-lg text-white text-base hover:bg-[#0D9488]/90 transition-colors"
-        >
-          <Plus class="w-[14px] h-4" />
-          Tambah Kategori
-        </button>
-      </div>
-
-      <!-- Konten Utama (Tabel) -->
-      <div class="bg-white rounded-lg border border-[#E2E8F0] shadow-sm">
-        <!-- Header Tabel + Pencarian -->
-        <div
-          class="flex items-center justify-between px-6 py-4 border-b border-[#E2E8F0]"
-        >
-          <h2 class="text-lg font-semibold text-[#0F172A]">Daftar Kategori</h2>
-          <div class="relative w-[292px]">
-            <Search
-              class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]"
-            />
-            <input
-              v-model="search"
-              type="text"
-              placeholder="Cari kategori..."
-              class="w-full h-[42px] pl-10 pr-4 border border-[#CBD5E1] rounded-lg text-base placeholder:text-[#ADAEBC] focus:outline-none focus:ring-2 focus:ring-[#0D9488]"
-            />
-          </div>
-        </div>
-
-        <!-- Tabel -->
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-[#F8FAFC]">
-              <tr>
-                <th
-                  class="px-4 py-4 text-center text-xs font-medium text-[#64748B] tracking-wider uppercase"
-                >
-                  ID
-                </th>
-                <th
-                  class="px-4 py-4 text-center text-xs font-medium text-[#64748B] tracking-wider uppercase"
-                >
-                  Nama Kategori
-                </th>
-                <th
-                  class="px-4 py-4 text-center text-xs font-medium text-[#64748B] tracking-wider uppercase"
-                >
-                  Deskripsi
-                </th>
-                <th
-                  class="px-4 py-4 text-center text-xs font-medium text-[#64748B] tracking-wider uppercase"
-                >
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Looping data menggunakan v-for -->
-              <tr
-                v-for="(kategori, index) in kategoris.data"
-                :key="kategori.id"
-                :class="[
-                  index % 2 === 0 ? 'bg-white' : 'bg-[#F8FAFC]',
-                  'border-t border-[#E2E8F0]',
-                ]"
-              >
-                <td class="px-4 py-5 text-center text-sm text-[#0F172A]">
-                  {{ kategori.id }}
-                </td>
-                <td class="px-4 py-5 text-center text-sm font-medium text-[#0F172A]">
-                  {{ kategori.name }}
-                </td>
-                <td class="px-4 py-5 text-center text-sm text-[#64748B]">
-                  {{ kategori.description }}
-                </td>
-                <td class="px-4 py-5">
-                  <div class="flex items-center justify-center gap-3">
-                    <button
-                      @click="editKategori(kategori.id)"
-                      class="p-1 hover:bg-[#F1F5F9] rounded transition-colors"
-                    >
-                      <Edit2 class="w-[14px] h-[14px] text-[#0D9488]" />
+                <div class="flex justify-end mt-6 gap-x-3">
+                    <button class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700">
+                        <span v-html="importIcon"></span> Import Excel
                     </button>
-                    <button
-                      @click="deleteKategori(kategori.id)"
-                      class="p-1 hover:bg-[#FEE2E2] rounded transition-colors"
-                    >
-                      <Trash2 class="w-3 h-[14px] text-[#DC2626]" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <!-- Tampilan jika tidak ada data -->
-              <tr v-if="kategoris.data.length === 0">
-                <td colspan="4" class="px-4 py-5 text-center text-sm text-gray-500">
-                  Tidak ada data kategori ditemukan.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                    <Link :href="route('kategori.create')" class="flex items-center px-4 py-2 text-white bg-teal-600 rounded-md hover:bg-teal-700">
+                        <span v-html="plusIcon"></span> Tambah Kategori
+                    </Link>
+                </div>
+
+                <div class="mt-4 overflow-hidden bg-white rounded-lg shadow-sm ring-1 ring-gray-900/5">
+                    
+                    <div class="flex flex-col items-center justify-between p-4 border-b border-gray-200 md:flex-row">
+                        <h3 class="text-lg font-semibold text-gray-900">Daftar Kategori</h3>
+                        <div class="relative w-full mt-4 md:w-1/3 md:mt-0">
+                            <span v-html="searchIcon" class="pointer-events-none"></span>
+                            <input 
+                                type="text" 
+                                v-model="search"
+                                placeholder="Cari kode atau nama kategori..."
+                                class="w-full py-2 pl-10 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="w-16 px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">No</th>
+                                    <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Kode</th>
+                                    <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Nama Kategori</th>
+                                    <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Deskripsi</th>
+                                    <th class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr v-if="kategoris.data.length === 0">
+                                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">Tidak ada data kategori.</td>
+                                </tr>
+                                <tr v-for="(kategori, index) in kategoris.data" :key="kategori.id" class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 text-sm text-center text-gray-500">
+                                        {{ (kategoris.current_page - 1) * kategoris.per_page + index + 1 }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                                        <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">{{ kategori.kode_kategori }}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">{{ kategori.nama_kategori }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">{{ kategori.deskripsi || '-' }}</td>
+                                    <td class="px-6 py-4 text-sm text-center">
+                                        <div class="flex justify-center gap-x-3">
+                                            <Link :href="route('kategori.edit', kategori.id)" class="text-teal-600 hover:text-teal-900 p-1 rounded hover:bg-teal-50" title="Edit">
+                                                <span v-html="editIcon"></span>
+                                            </Link>
+                                            <button @click="deleteKategori(kategori.id)" class="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50" title="Hapus">
+                                                <span v-html="deleteIcon"></span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div v-if="kategoris.data.length > 0" class="flex items-center justify-between p-4 border-t border-gray-200">
+                        <div class="text-sm text-gray-700">
+                            Menampilkan <span class="font-medium">{{ kategoris.from ?? 0 }}</span> sampai <span class="font-medium">{{ kategoris.to ?? 0 }}</span> dari <span class="font-medium">{{ kategoris.total }}</span> hasil
+                        </div>
+                        <div class="flex gap-1">
+                            <template v-for="(link, k) in kategoris.links" :key="k">
+                                <Link 
+                                    v-if="link.url"
+                                    :href="link.url"
+                                    v-html="link.label"
+                                    class="px-3 py-1 text-sm border rounded-md bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                    :class="{ 'bg-teal-600 text-white border-teal-600 hover:bg-teal-600': link.active }"
+                                    preserve-scroll
+                                />
+                                <span 
+                                    v-else
+                                    v-html="link.label"
+                                    class="px-3 py-1 text-sm border rounded-md bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
+                                ></span>
+                            </template>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
         </div>
-
-        <!-- Pagination -->
-        <div
-          class="flex items-center justify-between px-6 py-4 border-t border-[#E2E8F0]"
-        >
-          <!-- Info Paginasi -->
-          <div class="text-sm text-[#374151]">
-            Menampilkan {{ kategoris.from || 0 }}-{{ kategoris.to || 0 }} dari
-            {{ kategoris.total || 0 }} data
-          </div>
-
-          <!-- Link Paginasi (dinamis dari Laravel) -->
-          <div class="flex items-center gap-2">
-            <template v-for="(link, index) in kategoris.links" :key="index">
-              <Link
-                v-if="link.url"
-                :href="link.url"
-                :class="[
-                  'flex items-center justify-center border border-[#CBD5E1] rounded-lg text-sm font-normal transition-colors',
-                  {
-                    'bg-[#14B8A6] text-white w-[30px] h-[36px] border-[#14B8A6]':
-                      link.active,
-                  },
-                  { 'hover:bg-[#F8FAFC] w-[35px] h-[38px]': !link.active },
-                ]"
-              >
-                <span v-if="index === 0">
-                  <ChevronLeft class="w-[9px] h-[14px] text-black" />
-                </span>
-                <span v-else-if="index === kategoris.links.length - 1">
-                  <ChevronRight class="w-[9px] h-[14px] text-black" />
-                </span>
-                <span v-else v-html="link.label"></span>
-              </Link>
-
-              <span
-                v-else
-                :class="[
-                  'flex items-center justify-center border border-[#CBD5E1] rounded-lg text-sm font-normal transition-colors',
-                  'opacity-50 cursor-not-allowed w-[35px] h-[38px]',
-                ]"
-              >
-                <span v-if="index === 0">
-                  <ChevronLeft class="w-[9px] h-[14px] text-black" />
-                </span>
-                <span v-else-if="index === kategoris.links.length - 1">
-                  <ChevronRight class="w-[9px] h-[14px] text-black" />
-                </span>
-                <span v-else v-html="link.label"></span>
-              </span>
-            </template>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  </AuthenticatedLayout>
+    </AuthenticatedLayout>
 </template>
