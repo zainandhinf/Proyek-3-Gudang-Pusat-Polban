@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->timestamp('tanggal_masuk');
             $table->string('no_surat_jalan')->nullable();
+            $table->string('keterangan')->nullable();
             $table->foreignId('dicatat_oleh_user_id')->constrained('users');
             $table->timestamps();
         });
