@@ -1,118 +1,107 @@
 <script setup>
-import { ref, reactive } from "vue";
+import { ref } from "vue";
+import { useForm, Link } from "@inertiajs/vue3";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-// import { Head } from '@inertiajs/vue3'; // Jika menggunakan Inertia
 
-// // Data reaktif untuk form tambah barang
-// const form = reactive({
-//   barang_id: "",
-//   jumlah: null,
-//   tanggal_masuk: new Date().toISOString().split("T")[0], // Default hari ini
-//   keterangan: "",
+// const props = defineProps({
+//   // barangs: { type: Array, required: true },
+//   barangs: Array,
+//   // riwayatBarang: { type: Array, default: () => [] },
+//   riwayatBarang: Object,
 // });
 
-// Data reaktif untuk form
-const form = ref({
-  jurusan: "",
-  prodi: "",
-  lab: "",
-  unit: "",
-  tanggal_masuk: new Date().toISOString().split("T")[0], // Default hari ini
-  keterangan: "",
-  items: [],
-  menyetujui: "Kepala Subbagian Umum",
-  koordinator: "Ahmad Fauzi, S.T., M.T.",
+const props = defineProps({
+  barangs: Array,
+  barangmasuks: Object,
 });
 
-// Data dummy untuk riwayat (berdasarkan HTML Anda)
-const riwayatBarang = ref([
-  {
-    id: 1,
-    tanggal: "2024-01-15",
-    nama: "Laptop Dell Inspiron",
-    jumlah: "5 unit",
-    operator: "Ahmad Rizki",
-    catatan: "Pembelian baru",
-  },
-  {
-    id: 2,
-    tanggal: "2024-01-14",
-    nama: "Mouse Wireless",
-    jumlah: "10 unit",
-    operator: "Sari Dewi",
-    catatan: "Stok tambahan",
-  },
-  {
-    id: 3,
-    tanggal: "2024-01-13",
-    nama: "Keyboard Mechanical",
-    jumlah: "3 unit",
-    operator: "Budi Santoso",
-    catatan: "Penggantian",
-  },
-]);
+// -------------------------------
+// FORM UTAMA
+// -------------------------------
+const form = useForm({
+  tanggal_masuk: new Date().toISOString().split("T")[0],
+  keterangan: "",
+  items: [
+    {
+      barang_id: "",
+      jumlah: 0,
+    },
+  ],
+});
 
-// Data dummy untuk dropdown pilihan barang
-const pilihanBarang = ref([
-  { id: 1, nama: "Laptop Dell Inspiron" },
-  { id: 2, nama: "Mouse Wireless" },
-  { id: 3, nama: "Keyboard Mechanical" },
-  { id: 4, nama: "Proyektor" },
-]);
-const barangSatuanMap = {
-  kertas_a4: "Rim",
-  tinta_printer: "Botol",
-  mouse_logitech: "Unit",
-};
+// -------------------------------
+// RIWAYAT
+// -------------------------------
+// const riwayatBarang = ref([...props.riwayatBarang]);
 
-
-// Fungsi untuk menambah baris barang baru
-const addItem = () => {
-  form.value.items.push({
-    id: Date.now(), // ID unik sederhana
-    nama: '',
-    satuan: '',
-    jumlah: null
+// -------------------------------
+// TAMBAH ITEM BARU
+// -------------------------------
+function addItem() {
+  form.items.push({
+    barang_id: "",
+    satuan: "",
+    stok_saat_ini: 0,
+    jumlah: null,
   });
-};
-
-// Fungsi untuk menghapus baris barang
-const removeItem = (index) => {
-  form.value.items.splice(index, 1);
-};
-
-// Fungsi untuk mereset form
-function resetForm() {
-  form.barang_id = "";
-  form.jumlah = null;
-  form.tanggal_masuk = new Date().toISOString().split("T")[0];
-  form.keterangan = "";
 }
 
-// Fungsi untuk menyimpan data
+// -------------------------------
+// SAAT PILIH BARANG
+// -------------------------------
+function onBarangSelect(index) {
+  const item = form.items[index];
+  const barang = props.barangs.find((b) => b.id === item.barang_id);
+
+  if (!barang) return;
+
+  item.satuan = barang.satuan?.nama_satuan ?? "-";
+  item.stok_saat_ini = barang.stok_saat_ini ?? 0;
+}
+
+// -------------------------------
+// HAPUS ITEM
+// -------------------------------
+function removeItem(index) {
+  form.items.splice(index, 1);
+}
+
+// -------------------------------
+// RESET FORM
+// -------------------------------
+function resetForm() {
+  form.reset();
+  form.items = [];
+  form.tanggal_masuk = new Date().toISOString().split("T")[0];
+}
+
+// -------------------------------
+// SIMPAN DATA
+// -------------------------------
+// function simpanData() {
+//   // Jika ingin kirim ke backend, cukup:
+//   // form.post("/barang-masuk", { onSuccess: () => resetForm() });
+
+//   // DEMO: MASUKKAN KE RIWAYAT
+//   form.items.forEach((item) => {
+//     const barang = props.barangs.find((b) => b.id === item.barang_id);
+
+//     riwayatBarang.value.unshift({
+//       id: Date.now(),
+//       tanggal: form.tanggal_masuk,
+//       nama: barang?.nama_barang || "Tidak Dikenal",
+//       jumlah: `${item.jumlah} ${item.satuan}`,
+//       operator: "User Login",
+//       catatan: form.keterangan,
+//     });
+//   });
+
+//   resetForm();
+// }
 function simpanData() {
-  console.log("Data Form:", form);
-
-  // Di aplikasi nyata, Anda akan mengirim ini ke backend Laravel
-  // CONTOH:
-  // import { useForm } from '@inertiajs/vue3';
-  // const inertiaForm = useForm(form);
-  // inertiaForm.post('/barang-masuk', {
-  //   onSuccess: () => resetForm(),
-  // });
-
-  // Untuk demo, kita tambahkan ke list riwayat
-  const barangTerpilih = pilihanBarang.value.find((b) => b.id == form.barang_id);
-  riwayatBarang.value.unshift({
-    id: Date.now(),
-    tanggal: form.tanggal_masuk,
-    nama: barangTerpilih ? barangTerpilih.nama : "Barang Tidak Dikenali",
-    jumlah: `${form.jumlah} unit`,
-    operator: "Ahmad Operator", // Ambil dari data user yang login
-    catatan: form.keterangan,
+  form.post("/barang-masuk", {
+    onSuccess: () => resetForm(),
   });
-
-  resetForm();
 }
 </script>
 
@@ -202,6 +191,11 @@ function simpanData() {
                         Jumlah
                       </th>
                       <th
+                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Stok Saat Ini
+                      </th>
+                      <th
                         class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
                       >
                         Aksi
@@ -209,12 +203,12 @@ function simpanData() {
                     </tr>
                   </thead>
                   <tbody class="bg-white divide-y divide-gray-200">
-                    <tr v-if="form.items == 0">
+                    <tr v-if="form.items.length === 0">
                       <td colspan="6" class="px-4 py-4 text-center text-sm text-gray-500">
                         Belum ada barang yang ditambahkan.
                       </td>
                     </tr>
-                    <tr v-for="(item, index) in form.items" :key="item.id">
+                    <tr v-for="(item, index) in form.items" :key="index">
                       <td
                         class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-center"
                       >
@@ -222,14 +216,22 @@ function simpanData() {
                       </td>
                       <td class="px-4 py-3 whitespace-nowrap" style="min-width: 150px">
                         <select
-                          v-model="item.nama"
+                          v-model="item.barang_id"
+                          @change="onBarangSelect(index)"
                           class="w-full p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
+                          required
                         >
                           <option value="" disabled>Pilih Barang</option>
-                          <option value="kertas_a4">Kertas A4</option>
-                          <option value="tinta_printer">Tinta Printer</option>
-                          <option value="mouse_logitech">Mouse Logitech</option>
+                          <option v-for="item in barangs" :key="item.id" :value="item.id">
+                            {{ item.nama_barang }}
+                          </option>
                         </select>
+                        <div
+                          v-if="form.errors[`items.${index}.barang_id`]"
+                          class="text-red-500 text-xs"
+                        >
+                          {{ form.errors[`items.${index}.barang_id`] }}
+                        </div>
                       </td>
                       <td class="px-4 py-3 whitespace-nowrap" style="width: 120px">
                         <input
@@ -237,15 +239,25 @@ function simpanData() {
                           v-model="item.satuan"
                           class="w-full p-2 border border-gray-300 rounded-md text-sm bg-gray-50"
                           placeholder="Satuan"
-                          :disabled="!!barangSatuanMap[item.nama]"
+                          disabled
                         />
                       </td>
                       <td class="px-4 py-3 whitespace-nowrap" style="width: 100px">
                         <input
                           type="number"
                           v-model="item.jumlah"
+                          min="1"
+                          class="w-full p-2 border border-gray-300 rounded-md text-sm"
+                          required
+                        />
+                      </td>
+                      <td class="px-4 py-3 whitespace-nowrap" style="width: 100px">
+                        <input
+                          type="number"
+                          v-model="item.stok_saat_ini"
                           class="w-full p-2 border border-gray-300 rounded-md text-sm"
                           placeholder="0"
+                          disabled
                         />
                       </td>
                       <td class="px-4 py-3 whitespace-nowrap text-center">
@@ -346,32 +358,23 @@ function simpanData() {
                     scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Tanggal
+                    Tanggal Masuk
                   </th>
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Barang
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Jumlah
-                  </th>
+
                   <th
                     scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
                     Operator
                   </th>
+
                   <th
                     scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Catatan
+                    Keterangan
                   </th>
+
                   <th
                     scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -380,33 +383,53 @@ function simpanData() {
                   </th>
                 </tr>
               </thead>
+
               <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-if="riwayatBarang.length === 0">
+                <tr v-if="props.barangmasuks.data.length === 0">
                   <td colspan="6" class="px-6 py-4 text-center text-gray-500">
                     Tidak ada data riwayat.
                   </td>
                 </tr>
-                <tr v-for="item in riwayatBarang" :key="item.id" class="hover:bg-gray-50">
+
+                <tr
+                  v-for="item in props.barangmasuks.data"
+                  :key="item.id"
+                  class="hover:bg-gray-50"
+                >
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {{ item.tanggal }}
+                    {{ item.tanggal_masuk }}
                   </td>
-                  <td
-                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium"
-                  >
-                    {{ item.nama }}
-                  </td>
+
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ item.jumlah }}
+                    {{ item.dicatat_oleh.name }}
                   </td>
+
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ item.operator }}
+                    {{ item.keterangan }}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ item.catatan }}
-                  </td>
+
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button class="text-cyan-600 hover:text-cyan-900">Edit</button>
-                    <button class="ml-4 text-red-600 hover:text-red-900">Delete</button>
+                    <Link
+                      :href="route('barang-masuk.show', item.id)"
+                      class="text-cyan-600 hover:text-cyan-900"
+                    >
+                      Detail
+                    </Link>
+                    <Link
+                      :href="route('barang-masuk.edit', item.id)"
+                      class="ml-4 text-cyan-600 hover:text-cyan-900"
+                    >
+                      Edit
+                    </Link>
+                    <Link
+                      :href="route('barang-masuk.destroy', item.id)"
+                      method="delete"
+                      ask="Yakin hapus data ini?"
+                      as="button"
+                      class="ml-4 text-red-600 hover:text-red-900"
+                    >
+                      Hapus
+                    </Link>
                   </td>
                 </tr>
               </tbody>
@@ -418,8 +441,8 @@ function simpanData() {
           >
             <div class="text-sm text-gray-700">
               Menampilkan <span class="font-medium">1</span>-
-              <span class="font-medium">{{ riwayatBarang.length }}</span> dari
-              <span class="font-medium">{{ riwayatBarang.length }}</span> data
+              <span class="font-medium">{{ props.barangmasuks.data.length }}</span> dari
+              <span class="font-medium">{{ props.barangmasuks.data.length }}</span> data
             </div>
             <div class="flex gap-1">
               <button
