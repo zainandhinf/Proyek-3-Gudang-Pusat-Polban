@@ -5,11 +5,9 @@ import TextInput from '@/Components/TextInput.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 
-// Ambil data user dari Laravel (yang sudah kita setup sebelumnya)
 const user = usePage().props.auth.user;
 const appName = usePage().props.appName || 'SIMGP Polban';
 
-// --- LOGIKA UNTUK THEME TOGGLE ---
 const isDark = ref(false);
 
 const toggleTheme = () => {
@@ -36,7 +34,6 @@ onMounted(() => {
         document.documentElement.classList.remove('dark');
     }
 });
-// --- AKHIR LOGIKA THEME TOGGLE ---
 </script>
 
 <template>
