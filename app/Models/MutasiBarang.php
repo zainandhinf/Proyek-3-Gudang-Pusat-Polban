@@ -39,4 +39,16 @@ class MutasiBarang extends Model
     {
         return Carbon::parse($this->tanggal_mutasi)->format('d-m-Y');
     }
+
+    // generate nomor mutasi otomatis: MB-<YEAR>-<0001>
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (empty($model->nomor_mutasi)) {
+                $year = date('Y');
+                $count = self::whereYear('created_at', $year)->count() + 1;
+                $model->nomor_mutasi = sprintf('MB-%s-%04d', $year, $count);
+            }
+        });
+    }
 }
