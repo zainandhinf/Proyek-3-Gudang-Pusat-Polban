@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Carbon\Carbon;
+use App\Models\DetailMutasiBarang;
 
 class MutasiBarang extends Model
 {
@@ -20,7 +21,7 @@ class MutasiBarang extends Model
 
     public function detail(): HasMany
     {
-        return $this->hasMany(MutasiBarangDetail::class);
+        return $this->hasMany(DetailMutasiBarang::class);
     }
 
 

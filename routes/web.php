@@ -43,6 +43,11 @@ Route::middleware('auth')->group(function () {
     Route::put('/mutasi-barang/{id}', [MutasiBarangController::class, 'update'])->name('mutasi-barang.update');
     Route::delete('/mutasi-barang/{id}', [MutasiBarangController::class, 'destroy'])->name('mutasi-barang.destroy');
 
+    Route::get('/permintaan/{id}/proses', [PermintaanController::class, 'proses'])->name('permintaan.proses');
+    Route::post('/permintaan/{id}/proses', [PermintaanController::class, 'prosesStore'])->name('permintaan.proses.store');
+
+    
+    
     Route::post('/detail-barang-masuk', [DetailBarangMasukController::class, 'store'])->name('detail-barang-masuk.store');
     
     Route::get('/permintaan', [PermintaanController::class, 'index'])->name('permintaan.index');
