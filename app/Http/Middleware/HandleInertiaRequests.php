@@ -31,8 +31,17 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            
+            // Data User Authentication (sudah ada defaultnya biasanya)
             'auth' => [
                 'user' => $request->user(),
+            ],
+
+            // PERBAIKAN: Tambahkan bagian 'flash' ini secara eksplisit
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+                'info' => fn () => $request->session()->get('info'),
             ],
         ];
     }
