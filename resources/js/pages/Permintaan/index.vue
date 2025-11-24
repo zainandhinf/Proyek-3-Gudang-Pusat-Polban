@@ -55,7 +55,7 @@ const handleReject = (id) => {
 // Simulasi fungsi aksi
 const handleProcess = (id) => {
     console.log('Memproses permintaan ID:', id);
-    // router.post(route('permintaan.process', id));
+    router.post(route('permintaan.proses', id));
 };
 </script>
 
@@ -146,14 +146,14 @@ const handleProcess = (id) => {
                                             Preview Surat
                                         </button>
                                         
-                                        <button 
+                                        <a 
                                             v-if="item.status !== 'Selesai'" 
-                                            @click="handleProcess(item.id)"
+                                            :href="route('permintaan.proses', item.id)"
                                             class="text-blue-900 hover:text-blue-700 flex items-center gap-1 font-medium"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                                             Proses
-                                        </button>
+                                        </a>
 
                                         <span v-else class="text-gray-400 text-xs flex items-center gap-1">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>

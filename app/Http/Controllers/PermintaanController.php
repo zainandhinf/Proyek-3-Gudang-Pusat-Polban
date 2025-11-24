@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Permintaan;
+use App\Models\DetailPermintaan;
+use App\Models\Barang;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
 
 class PermintaanController extends Controller
 {
@@ -94,4 +97,80 @@ class PermintaanController extends Controller
     {
         //
     }
+
+    /**
+     * Proses permintaan (oleh operator)
+     */        
+    public function proses($id)
+    {
+        $permintaan = Permintaan::with([
+            'pemohon',
+            'detailPermintaans.barang.satuan'
+        ])->findOrFail($id);
+
+        $permintaan->file_url = $permintaan->file_path
+            ? asset('storage/' . $permintaan->file_path)
+            : null;
+
+        $barangs = Barang::with(['satuan'])
+        ->select('id','nama_barang','satuan_id','stok_saat_ini')
+        ->orderBy('nama_barang')
+        ->get();
+
+        return Inertia::render('Permintaan/proses', [
+            'permintaan' => $permintaan,
+            'barangs' => $barangs
+        ]);
+    }
+
+    /**
+     * Simpan proses permintaan (oleh operator)
+     */
+    public function prosesStore(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.barang_id' => 'required|exists:barangs,id',
+            'items.*.jumlah' => 'required|integer|min:1',
+            'items.*.catatan' => 'nullable|string',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+
+            // Ambil header permintaan
+            $permintaan = Permintaan::findOrFail($id);
+
+            // 1️⃣ Hapus detail lama
+            $permintaan->detailPermintaans()->delete();
+
+            // 2️⃣ Simpan detail baru
+            foreach ($validated['items'] as $item) {
+                $permintaan->detailPermintaans()->create([
+                    'barang_id' => $item['barang_id'],
+                    'jumlah_diminta' => $item['jumlah'],
+                    'keterangan' => $item['catatan'] ?? null,
+                ]);
+            }
+
+            // 3️⃣ Update status
+            $permintaan->update([
+                'status' => 'Processed',
+            ]);
+
+            DB::commit();
+
+            return redirect()
+                ->route('permintaan.index')
+                ->with('success', 'Permintaan berhasil diproses.');
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+
 }
