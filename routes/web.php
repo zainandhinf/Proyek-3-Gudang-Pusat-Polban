@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SatuanController;
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\BarangUsangController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -58,6 +59,13 @@ Route::middleware('auth')->group(function () {
     Route::put('/barangs/{barang}', [BarangController::class, 'update'])->name('barangs.update');
     Route::delete('/barangs/{barang}', [BarangController::class, 'destroy'])->name('barangs.destroy');
 
+    //Barang Usang Routes
+    Route::get('/barang-usang', [BarangUsangController::class, 'index'])->name('barang-usang.index');
+    Route::get('/barang-usang/create', [BarangUsangController::class, 'create'])->name('barang-usang.create');
+    Route::post('/barang-usang', [BarangUsangController::class, 'store'])->name('barang-usang.store');
+    Route::get('/barang-usang/{barangUsang}/edit', [BarangUsangController::class, 'edit'])->name('barang-usang.edit');
+    Route::put('/barang-usang/{barangUsang}', [BarangUsangController::class, 'update'])->name('barang-usang.update');
+    Route::delete('/barang-usang/{barangUsang}', [BarangUsangController::class, 'destroy'])->name('barang-usang.destroy');
 });
 
 
