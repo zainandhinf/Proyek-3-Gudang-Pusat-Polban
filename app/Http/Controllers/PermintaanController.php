@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Permintaan;
 use App\Models\DetailPermintaan;
 use App\Models\Barang;
+use App\Models\MutasiBarang;
+use App\Models\DetailMutasiBarang;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -178,21 +180,79 @@ class PermintaanController extends Controller
      */
     public function approve($id)
     {
-        $permintaan = Permintaan::findOrFail($id);
+        DB::beginTransaction();
 
-        if (!in_array($permintaan->status->value, [StatusPermintaan::PENDING->value, StatusPermintaan::PROCESSED->value])) {
-            return back()->with('error', 'Permintaan tidak dapat ditolak karena statusnya saat ini adalah ' . $permintaan->status->value . '.');
+        try {
+            $permintaan = Permintaan::with('detailPermintaans')->findOrFail($id);
+
+            if (!in_array(
+                $permintaan->status->value,
+                [StatusPermintaan::PENDING->value, StatusPermintaan::PROCESSED->value]
+            )) {
+                return back()->with('error', 'Permintaan tidak dapat disetujui karena statusnya saat ini adalah ' . $permintaan->status->value . '.');
+            }
+
+            // ---------------------------
+            // 1. UBAH STATUS PERMINTAAN
+            // ---------------------------
+            $permintaan->update([
+                'status' => StatusPermintaan::APPROVED->value,
+                'approval_user_id' => auth()->id(),
+                'tanggal_disetujui' => now(),
+            ]);
+
+            // ----------------------------------
+            // 2. BUAT HEADER MUTASI BARANG
+            // ----------------------------------
+            $mutasi = MutasiBarang::create([
+                'jenis_mutasi' => 'keluar',
+                'tanggal_mutasi' => now(),
+                'keterangan' => 'Mutasi barang keluar dari Permintaan No. ' . $permintaan->no_permintaan,
+                'dicatat_oleh_user_id' => auth()->id(),
+                'permintaan_id' => $permintaan->id,
+            ]);
+
+            // Generate nomor mutasi (opsional tapi disarankan)
+            $mutasi->update([
+                'nomor_mutasi' => 'MB-' . str_pad($mutasi->id, 5, '0', STR_PAD_LEFT)
+            ]);
+
+            // ----------------------------------
+            // 3. LOOP DETAIL PERMINTAAN → DETAIL MUTASI
+            // ----------------------------------
+            foreach ($permintaan->detailPermintaans as $detail) {
+
+                $barang = Barang::findOrFail($detail->barang_id);
+
+                // Validasi stok cukup
+                if ($barang->stok_saat_ini < $detail->jumlah_diminta) {
+                    throw new \Exception("Stok barang {$barang->nama_barang} tidak mencukupi!");
+                }
+
+                // Simpan detail mutasi
+                DetailMutasiBarang::create([
+                    'mutasi_barang_id' => $mutasi->id,
+                    'barang_id' => $barang->id,
+                    'jumlah' => $detail->jumlah_diminta,
+                    'catatan' => $detail->keterangan,
+                ]);
+
+                // Update stok barang
+                $barang->update([
+                    'stok_saat_ini' => $barang->stok_saat_ini - $detail->jumlah_diminta
+                ]);
+            }
+
+            DB::commit();
+
+            return back()->with('success', 'Permintaan berhasil disetujui dan mutasi barang keluar telah dicatat.');
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        $permintaan->update([
-            'status' => StatusPermintaan::APPROVED->value,
-            'approval_user_id' => auth()->id(),
-            'tanggal_disetujui' => now(),
-        ]);
-
-        return back()->with('success', 'Permintaan berhasil disetujui.');
     }
-
     /**
      * Reject permintaan (oleh approval)
      */
