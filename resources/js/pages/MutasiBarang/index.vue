@@ -32,7 +32,7 @@ const props = defineProps({
             class="flex flex-col md:flex-row justify-between items-start md:items-center"
           >
             <div>
-              <h2 class="text-xl font-semibold text-gray-800">Riwayat Barang Masuk</h2>
+              <h2 class="text-xl font-semibold text-gray-800">Riwayat Mutasi Barang</h2>
               <p class="text-sm text-gray-500 mt-1">
                 Daftar barang yang telah dimutasi
               </p>
