@@ -97,7 +97,7 @@ const props = defineProps({
                       >Edit</Link
                     >
                     <Link
-                      :href="route('barang-masuk.destroy', item.id)"
+                      :href="route('mutasi-barang.destroy', item.id)"
                       method="delete"
                       ask="Yakin hapus data ini?"
                       as="button"
