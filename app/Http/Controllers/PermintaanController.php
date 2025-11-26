@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use App\Enums\StatusPermintaan;
 
 class PermintaanController extends Controller
 {
@@ -170,6 +171,51 @@ class PermintaanController extends Controller
             DB::rollBack();
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Approve permintaan (oleh approval)
+     */
+    public function approve($id)
+    {
+        $permintaan = Permintaan::findOrFail($id);
+
+        if (!in_array($permintaan->status->value, [StatusPermintaan::PENDING->value, StatusPermintaan::PROCESSED->value])) {
+            return back()->with('error', 'Permintaan tidak dapat ditolak karena statusnya saat ini adalah ' . $permintaan->status->value . '.');
+        }
+
+        $permintaan->update([
+            'status' => StatusPermintaan::APPROVED->value,
+            'approval_user_id' => auth()->id(),
+            'tanggal_disetujui' => now(),
+        ]);
+
+        return back()->with('success', 'Permintaan berhasil disetujui.');
+    }
+
+    /**
+     * Reject permintaan (oleh approval)
+     */
+    public function reject(Request $request, $id)
+    {
+        $request->validate([
+            'catatan_reject' => 'required|string|max:255',
+        ]);
+
+        $permintaan = Permintaan::findOrFail($id);
+
+        if (!in_array($permintaan->status->value, [StatusPermintaan::PENDING->value, StatusPermintaan::PROCESSED->value])) {
+            return back()->with('error', 'Permintaan tidak dapat ditolak karena statusnya saat ini adalah ' . $permintaan->status->value . '.');
+        }
+
+        $permintaan->update([
+            'status' => StatusPermintaan::REJECTED->value,
+            'catatan_reject' => $request->catatan_reject,
+            'approval_user_id' => auth()->id(),
+            'tanggal_disetujui' => now(),
+        ]);
+
+        return back()->with('success', 'Permintaan berhasil ditolak.');
     }
 
 
