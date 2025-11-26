@@ -49,8 +49,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/permintaan/{id}/approve', [PermintaanController::class, 'approve'])->name('permintaan.approve');
     Route::post('/permintaan/{id}/reject', [PermintaanController::class, 'reject'])->name('permintaan.reject');
     
-    
-    Route::post('/detail-barang-masuk', [DetailBarangMasukController::class, 'store'])->name('detail-barang-masuk.store');
+    Route::get('/permintaan/riwayat', [PermintaanController::class, 'riwayat'])->name('permintaan.riwayat');
+    Route::get('/permintaan/detail/{id}', [PermintaanController::class, 'detail'])->name('permintaan.detail');
+
+
+    // Route::post('/detail-barang-masuk', [DetailBarangMasukController::class, 'store'])->name('detail-barang-masuk.store');
     
     
     // Pemohon

@@ -278,5 +278,42 @@ class PermintaanController extends Controller
         return back()->with('success', 'Permintaan berhasil ditolak.');
     }
 
+    /**
+     * Halaman Riwayat Permintaan Pemohon
+     */
+    public function riwayat()
+    {
+        $userId = Auth::id();
+
+        $permintaans = Permintaan::where('pemohon_user_id', $userId)
+            ->orderBy('tanggal_pengajuan', 'desc')
+            ->get();
+
+        return Inertia::render('Permintaan/riwayat', [
+            'permintaans' => $permintaans
+        ]);
+    }
+
+    /**
+     * Detail permintaan untuk pemohon
+     */
+    public function detail($id)
+    {
+        $permintaan = Permintaan::with([
+            'pemohon',
+            'detailPermintaans.barang.satuan'
+        ])->where('id', $id)
+        ->where('pemohon_user_id', Auth::id()) // keamanan: hanya milik sendiri
+        ->firstOrFail();
+
+        $permintaan->file_url = $permintaan->file_path
+            ? asset('storage/' . $permintaan->file_path)
+            : null;
+
+        return Inertia::render('Permintaan/detail', [
+            'permintaan' => $permintaan
+        ]);
+    }
+
 
 }
