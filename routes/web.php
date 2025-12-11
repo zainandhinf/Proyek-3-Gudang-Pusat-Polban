@@ -3,8 +3,9 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MutasiBarangController;
 use App\Http\Controllers\BarangMasukController;
-use App\Http\Controllers\DetailBarangMasukController;
 use App\Http\Controllers\PermintaanController;
+use App\Http\Controllers\StockOpnameController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -18,9 +19,12 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Route::get('/dashboard', function () {
+//     return Inertia::render('Dashboard');
+// })->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -51,6 +55,13 @@ Route::middleware('auth')->group(function () {
     
     Route::get('/permintaan/riwayat', [PermintaanController::class, 'riwayat'])->name('permintaan.riwayat');
     Route::get('/permintaan/detail/{id}', [PermintaanController::class, 'detail'])->name('permintaan.detail');
+
+    Route::get('/stock-opname', [StockOpnameController::class, 'index'])->name('stock-opname.index');
+    Route::post('/stock-opname', [StockOpnameController::class, 'store'])->name('stock-opname.store');
+    Route::get('/stock-opname/{id}/edit', [StockOpnameController::class, 'edit'])->name('stock-opname.edit');
+    Route::put('/stock-opname/{id}', [StockOpnameController::class, 'update'])->name('stock-opname.update');
+    Route::get('/stock-opname/{id}', [StockOpnameController::class, 'show'])->name('stock-opname.show');
+    Route::delete('/stock-opname/{id}', [StockOpnameController::class, 'destroy'])->name('stock-opname.destroy');
 
 
     // Route::post('/detail-barang-masuk', [DetailBarangMasukController::class, 'store'])->name('detail-barang-masuk.store');
