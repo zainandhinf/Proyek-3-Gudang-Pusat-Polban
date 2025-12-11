@@ -11,14 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('detail_stock_opnames', function (Blueprint $table) {
+        Schema::create('detail_mutasi_barangs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('stock_opname_id')->constrained('stock_opnames')->onDelete('cascade');
+            $table->foreignId('mutasi_barang_id')->constrained('mutasi_barangs')->onDelete('cascade');
             $table->foreignId('barang_id')->constrained('barangs');
-            $table->integer('stok_sistem');
-            $table->integer('stok_fisik')->nullable();
-            $table->integer('selisih')->nullable();
-            $table->text('keterangan')->nullable();
+            $table->integer('jumlah');
+            $table->text('catatan')->nullable();
             // tidak ada timestamps
         });
     }
@@ -28,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('detail_stock_opnames');
+        Schema::dropIfExists('detail_mutasi_barangs');
     }
 };

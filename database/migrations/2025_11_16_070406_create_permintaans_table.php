@@ -33,6 +33,7 @@ return new class extends Migration
             $table->timestamp('tanggal_selesai')->nullable();
             $table->string('file_path')->nullable(); // Untuk menyimpan path file yg di-upload
             $table->boolean('is_transcribed')->default(false); // Penanda untuk Operator
+            $table->text('catatan_reject')->nullable(); // Catatan jika ditolak
             $table->timestamps();
         });
     }
