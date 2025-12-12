@@ -1,18 +1,21 @@
-Tentu, saya mengerti. Berdasarkan file `BarangApr.txt` (yang kemungkinan besar menampilkan struktur data barang lengkap termasuk Harga dan Gambar) dan permintaan Anda untuk menerapkan pembatasan wewenang (Role-Based), berikut adalah kode **`Index.vue`** untuk **Master Data Barang**.
-
-Kode ini sudah mencakup:
-
-1.  **Kolom Tambahan**: Gambar (Foto Barang) dan Harga.
-2.  **Logika Role**: Tombol *Import*, *Tambah*, *Edit*, dan *Hapus* **HANYA** muncul jika user adalah **Operator**. User **Approval** hanya bisa melihat data (Read-Only).
-
-Silakan salin kode ini ke: **`resources/js/Pages/Barang/Index.vue`**
-
-```vue
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, nextTick } from 'vue';
 import { throttle } from 'lodash';
+import QrcodeVue from 'qrcode.vue';
+import {
+  Search,
+  Upload,
+  Plus,
+  Edit2,
+  Trash2,
+  ChevronRight,
+  ChevronLeft,
+  QrCode,
+  X,
+  Download
+} from "lucide-vue-next";
 
 // Props dari Controller
 const props = defineProps({
@@ -54,6 +57,62 @@ const deleteBarang = (id) => {
     if (confirm('Apakah Anda yakin ingin menghapus data barang ini?')) {
         router.delete(route('barangs.destroy', id));
     }
+};
+
+// --- LOGIC MODAL QR CODE ---
+const showQrModal = ref(false);
+const selectedBarangQr = ref(null);
+
+const openQrModal = (barang) => {
+  selectedBarangQr.value = barang;
+  showQrModal.value = true;
+};
+
+const closeQrModal = () => {
+  showQrModal.value = false;
+  selectedBarangQr.value = null;
+};
+
+// --- LOGIC DOWNLOAD QR ---
+const downloadQrCode = async () => {
+  // Tunggu DOM update selesai (jika baru dibuka)
+  await nextTick();
+
+  // Cari elemen canvas
+  const canvas = document.querySelector('.qr-canvas-wrapper canvas');
+  
+  if (canvas) {
+    try {
+      // Ambil Data URL (format gambar PNG)
+      const image = canvas.toDataURL("image/png");
+      
+      // Validasi apakah data URL valid (tidak kosong/pendek)
+      if (image.length < 100) {
+          alert("Gambar QR Code belum siap. Silakan coba lagi sebentar lagi.");
+          return;
+      }
+      
+      // Buat link sementara untuk trigger download
+      const link = document.createElement('a');
+      link.href = image;
+      
+      // Set nama file (misal: QR-ATK.001.png)
+      // Sanitasi nama file agar aman
+      const safeName = selectedBarangQr.value.kode_barang.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      link.download = `QR-${safeName}.png`;
+      
+      // Klik otomatis & hapus link
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+    } catch (e) {
+      console.error("Gagal download QR:", e);
+      alert("Gagal mendownload QR Code.");
+    }
+  } else {
+      console.error("Canvas QR Code tidak ditemukan di DOM");
+  }
 };
 </script>
 
@@ -110,7 +169,7 @@ const deleteBarang = (id) => {
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Info Barang</th>
-                                    <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Kategori</th>
+                                    <!-- <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Kategori</th> -->
                                     <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Satuan</th>
                                     <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Harga</th>
                                     <th class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Stok</th>
@@ -129,7 +188,7 @@ const deleteBarang = (id) => {
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10">
-                                                <img v-if="barang.gambar" :src="`/storage/${barang.gambar}`" class="h-10 w-10 rounded-md object-cover border" alt="Foto Barang">
+                                                <img v-if="barang.foto" :src="`/storage/${barang.foto}`" class="h-10 w-10 rounded-md object-cover border" alt="Foto Barang">
                                                 <div v-else class="h-10 w-10 rounded-md bg-gray-100 flex items-center justify-center text-gray-400 text-xs">No Img</div>
                                             </div>
                                             <div class="ml-4">
@@ -137,13 +196,6 @@ const deleteBarang = (id) => {
                                                 <div class="text-xs text-gray-500 font-mono bg-gray-100 px-1 rounded">{{ barang.kode_barang }}</div>
                                             </div>
                                         </div>
-                                    </td>
-
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <span v-if="barang.kategori" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            {{ barang.kategori.nama_kategori }}
-                                        </span>
-                                        <span v-else class="text-gray-400">-</span>
                                     </td>
 
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -156,12 +208,19 @@ const deleteBarang = (id) => {
 
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
                                         <span class="font-bold" :class="barang.stok > 0 ? 'text-green-600' : 'text-red-600'">
-                                            {{ barang.stok }}
+                                            {{ barang.stok_saat_ini }}
                                         </span>
                                     </td>
 
                                     <td v-if="isOperator" class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                         <div class="flex justify-center gap-3">
+                                            <button 
+                                                @click="openQrModal(barang)" 
+                                                class="p-1 hover:bg-[#F1F5F9] rounded transition-colors"
+                                                title="Lihat QR Code"
+                                            >
+                                                <QrCode class="w-[14px] h-[14px] text-slate-600" />
+                                            </button>
                                             <Link :href="route('barangs.edit', barang.id)" class="text-teal-600 hover:text-teal-900 p-1 rounded hover:bg-teal-50 transition-colors" title="Edit">
                                                 <span v-html="editIcon"></span>
                                             </Link>
@@ -202,6 +261,59 @@ const deleteBarang = (id) => {
                 </div>
             </div>
         </div>
+
+
+
+
+        <div v-if="showQrModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all">
+                
+                <div class="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
+                    <h3 class="font-bold text-gray-800">QR Code Barang</h3>
+                    <button @click="closeQrModal" class="text-gray-400 hover:text-gray-600 transition">
+                        <X class="w-5 h-5" />
+                    </button>
+                </div>
+
+                <div class="p-6 flex flex-col items-center text-center">
+                    <div class="qr-canvas-wrapper bg-white p-4 border-2 border-gray-100 rounded-lg mb-4 shadow-sm inline-block">
+                        <QrcodeVue 
+                            :key="selectedBarangQr.id"
+                            :value="selectedBarangQr.kode_barang" 
+                            :size="250" 
+                            level="H" 
+                            render-as="canvas"
+                            foreground="#1e293b"
+                            background="#ffffff"
+                        />
+                    </div>
+
+                    <h4 class="text-lg font-bold text-slate-800">{{ selectedBarangQr.nama_barang }}</h4>
+                    <p class="text-sm font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded mt-1">
+                        {{ selectedBarangQr.kode_barang }}
+                    </p>
+                    <p class="text-xs text-slate-400 mt-4">
+                        Scan QR ini untuk menemukan data barang di sistem.
+                    </p>
+                </div>
+
+                <div class="p-4 border-t border-gray-100 flex gap-3">
+                    <button 
+                        @click="closeQrModal"
+                        class="flex-1 py-2 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+                    >
+                        Tutup
+                    </button>
+                    
+                    <button 
+                        @click="downloadQrCode"
+                        class="flex-1 py-2 px-4 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition font-medium flex items-center justify-center gap-2"
+                    >
+                        <Download class="w-4 h-4" />
+                        Download PNG
+                    </button>
+                </div>
+            </div>
+        </div>
     </AuthenticatedLayout>
 </template>
-```

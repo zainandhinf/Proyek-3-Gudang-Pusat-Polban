@@ -42,7 +42,7 @@ class DashboardController extends Controller
         
         // --- LOGIKA UNTUK PEMOHON ---
         else {
-            $data['barangs'] = Barang::with(['satuan', 'kategori'])
+            $data['barangs'] = Barang::with(['satuan', 'kelompokBarang'])
                 ->latest()
                 ->limit(8)
                 ->get();

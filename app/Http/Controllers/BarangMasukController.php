@@ -26,7 +26,7 @@ class BarangMasukController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $barangs = Barang::with(['kategori', 'satuan'])
+        $barangs = Barang::with(['kelompokBarang', 'satuan'])
             ->orderBy('nama_barang')
             ->get();
 

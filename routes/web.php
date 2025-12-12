@@ -11,7 +11,7 @@ use App\Http\Controllers\DashboardController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use App\Http\Controllers\KategoriController;
+use App\Http\Controllers\KelompokBarangController;
 
 
 
@@ -36,17 +36,14 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
-    // Kategori Routes
-    Route::get('/kategoris', [KategoriController::class, 'index'])->name('kategori.index');
-    Route::get('/kategoris/create', [KategoriController::class, 'create'])->name('kategori.create');
-    Route::post('/kategoris', [KategoriController::class, 'store'])->name('kategori.store');
+    // Kelompok Barang Routes
+    Route::get('/kelompok-barang', [KelompokBarangController::class, 'index'])->name('kelompok-barang.index');
+    Route::get('/kelompok-barang/create', [KelompokBarangController::class, 'create'])->name('kelompok-barang.create');
+    Route::post('/kelompok-barang', [KelompokBarangController::class, 'store'])->name('kelompok-barang.store');
     
-    // Pastikan baris ini aktif (tidak ada // di depannya) dan parameternya {kategori}
-    Route::get('/kategoris/{kategori}/edit', [KategoriController::class, 'edit'])->name('kategori.edit');
-    Route::put('/kategoris/{kategori}', [KategoriController::class, 'update'])->name('kategori.update');
-    Route::delete('/kategoris/{kategori}', [KategoriController::class, 'destroy'])->name('kategori.destroy');
-
-    Route::get('/kategoris/{id}', [KategoriController::class, 'show'])->name('kategori.show');
+    Route::get('/kelompok-barang/{id}/edit', [KelompokBarangController::class, 'edit'])->name('kelompok-barang.edit');
+    Route::put('/kelompok-barang/{id}', [KelompokBarangController::class, 'update'])->name('kelompok-barang.update');
+    Route::delete('/kelompok-barang/{id}', [KelompokBarangController::class, 'destroy'])->name('kelompok-barang.destroy');
 
     // Satuan Routes
     Route::get('/satuans', [SatuanController::class, 'index'])->name('satuans.index');

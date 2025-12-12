@@ -22,8 +22,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             UnitKerjaSeeder::class,
-            KategoriSeeder::class,
             SatuanSeeder::class,
+            KelompokBarangSeeder::class,
         ]);
         
         $this->call([

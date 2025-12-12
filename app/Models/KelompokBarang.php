@@ -6,13 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Kategori extends Model
+class KelompokBarang extends Model
 {
     use HasFactory;
+    
     protected $guarded = [];
 
     public function barangs(): HasMany
     {
-        return $this->hasMany(Barang::class);
+        return $this->hasMany(Barang::class, 'kelompok_barang_id');
     }
 }

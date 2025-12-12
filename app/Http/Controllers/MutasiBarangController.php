@@ -32,7 +32,7 @@ class MutasiBarangController extends Controller
 
         $mutasis = $query->orderBy('tanggal_mutasi','desc')->paginate(12)->withQueryString();
 
-        $barangs = Barang::with(['kategori','satuan'])->orderBy('nama_barang')->get();
+        $barangs = Barang::with(['kelompokBarang','satuan'])->orderBy('nama_barang')->get();
 
         return Inertia::render('MutasiBarang/index', [
             'mutasis' => $mutasis->through(fn($m) => [
