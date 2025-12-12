@@ -143,119 +143,174 @@ class MutasiBarangController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(MutasiBarang $mutasiBarang)
+    public function show($id)
     {
-        //
+        $mutasi = MutasiBarang::with(['detail.barang.satuan', 'dicatatOleh'])
+            ->findOrFail($id);
+
+        return Inertia::render('MutasiBarang/detail', [
+            'mutasi' => [
+                'id' => $mutasi->id,
+                'nomor_mutasi' => $mutasi->nomor_mutasi,
+                'jenis_mutasi' => $mutasi->jenis_mutasi,
+                'tanggal_mutasi' => $mutasi->tanggal_mutasi->format('d-m-Y'),
+                'keterangan' => $mutasi->keterangan,
+                'dicatat_oleh' => $mutasi->dicatatOleh->name ?? '-',
+            ],
+
+            'detail' => $mutasi->detail->map(function ($d) use ($mutasi) {
+
+                $stokAwal = $d->barang->stok_saat_ini;
+
+                // Hitung stok sebelum & sesudah
+                if ($mutasi->jenis_mutasi === 'masuk') {
+                    $stokSebelum = $stokAwal - $d->jumlah;
+                    $stokSesudah = $stokAwal;
+                } else {
+                    $stokSebelum = $stokAwal + $d->jumlah;
+                    $stokSesudah = $stokAwal;
+                }
+
+                return [
+                    'id' => $d->id,
+                    'barang_id' => $d->barang_id,
+                    'nama_barang' => $d->barang->nama_barang,
+                    'jumlah' => $d->jumlah,
+                    'satuan' => $d->barang->satuan->nama_satuan ?? '-',
+                    'catatan' => $d->catatan,
+
+                    'stok_sebelum' => $stokSebelum,
+                    'stok_sesudah' => $stokSesudah,
+                ];
+            }),
+        ]);
     }
+
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(MutasiBarang $mutasiBarang)
-    {
-        $mutasiBarang->load(['detail.barang.satuan']);
+    // public function edit(MutasiBarang $mutasiBarang)
+    // {
+    //     $mutasiBarang->load(['detail.barang.satuan']);
 
-        $barangs = Barang::with('satuan')
-            ->select('id','nama_barang','satuan_id','stok_saat_ini')
+    //     $barangs = Barang::with('satuan')
+    //         ->select('id','nama_barang','satuan_id','stok_saat_ini')
+    //         ->orderBy('nama_barang')
+    //         ->get();
+
+    //     return Inertia::render('MutasiBarang/edit', [
+    //         'mutasi' => $mutasiBarang,
+    //         'barangs' => $barangs
+    //     ]);
+    // }
+
+    public function edit($id)
+    {
+        $mutasi = MutasiBarang::with([
+            'detail.barang.satuan'
+        ])->findOrFail($id);
+
+        $barangs = Barang::with(['satuan'])
             ->orderBy('nama_barang')
             ->get();
 
         return Inertia::render('MutasiBarang/edit', [
-            'mutasi' => $mutasiBarang,
+            'mutasi' => [
+                'id' => $mutasi->id,
+                'jenis_mutasi' => $mutasi->jenis_mutasi,
+                'tanggal_mutasi' => $mutasi->tanggal_mutasi->format('Y-m-d'),
+                'keterangan' => $mutasi->keterangan,
+                'detail' => $mutasi->detail->map(fn($d) => [
+                    'id' => $d->id,
+                    'barang_id' => $d->barang_id,
+                    'jumlah' => $d->jumlah,
+                    'catatan' => $d->catatan,
+                    'barang' => [
+                        'nama_barang' => $d->barang->nama_barang,
+                        'stok_saat_ini' => $d->barang->stok_saat_ini,
+                        'satuan' => [
+                            'nama_satuan' => $d->barang->satuan->nama_satuan ?? '-'
+                        ]
+                    ]
+                ]),
+            ],
             'barangs' => $barangs
         ]);
     }
 
-
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, MutasiBarang $mutasiBarang)
+    public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'jenis_mutasi' => 'required|in:masuk,keluar',
-            'tanggal_mutasi' => 'required|date',
-            'keterangan' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.barang_id' => 'required|exists:barangs,id',
-            'items.*.jumlah' => 'required|integer|min:1',
-            'items.*.catatan' => 'nullable|string',
+            'jenis_mutasi' => ['required', 'in:masuk,keluar'],
+            'tanggal_mutasi' => ['required', 'date'],
+            'keterangan' => ['nullable', 'string'],
+
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.id' => ['nullable', 'integer'],
+            'items.*.barang_id' => ['required', 'exists:barangs,id'],
+            'items.*.jumlah' => ['required', 'integer', 'min:1'],
+            'items.*.catatan' => ['nullable', 'string'],
         ]);
 
-        DB::beginTransaction();
+        $mutasi = MutasiBarang::findOrFail($id);
 
-        try {
-            // STEP 1 — REVERT STOK LAMA
-            foreach ($mutasiBarang->detail as $old) {
+        // HEADER UPDATE
+        $mutasi->update([
+            'jenis_mutasi' => $validated['jenis_mutasi'],
+            'tanggal_mutasi' => $validated['tanggal_mutasi'],
+            'keterangan' => $validated['keterangan'],
+        ]);
 
-                $barang = Barang::findOrFail($old->barang_id);
+        // MANAGE DETAIL MUTASI
+        $existingIds = $mutasi->detail()->pluck('id')->toArray();
+        $sentIds = collect($validated['items'])->pluck('id')->filter()->toArray();
 
-                if ($mutasiBarang->jenis_mutasi === 'masuk') {
-                    // revert stok: kurangi stok yang dulu ditambahkan
-                    $barang->stok_saat_ini -= $old->jumlah;
-                } else {
-                    // revert stok: tambahkan kembali stok yang dulu dikurangi
-                    $barang->stok_saat_ini += $old->jumlah;
-                }
+        // Delete removed rows
+        $idsToDelete = array_diff($existingIds, $sentIds);
+        if (!empty($idsToDelete)) {
+            $mutasi->detail()->whereIn('id', $idsToDelete)->delete();
+        }
 
-                $barang->save();
-            }
-
-            // Hapus semua detail lama
-            $mutasiBarang->detail()->delete();
-
-
-            // STEP 2 — UPDATE HEADER
-            $mutasiBarang->update([
-                'jenis_mutasi' => $validated['jenis_mutasi'],
-                'tanggal_mutasi' => $validated['tanggal_mutasi'],
-                'keterangan' => $validated['keterangan'] ?? null,
-            ]);
-
-
-            // STEP 3 — APPLY MUTASI BARU
-            foreach ($validated['items'] as $item) {
-                
-                $barang = Barang::findOrFail($item['barang_id']);
-
-                if ($validated['jenis_mutasi'] === 'masuk') {
-                    $stokBaru = $barang->stok_saat_ini + $item['jumlah'];
-                } else {
-                    if ($barang->stok_saat_ini < $item['jumlah']) {
-                        throw new \Exception("Stok barang {$barang->nama_barang} tidak mencukupi!");
-                    }
-                    $stokBaru = $barang->stok_saat_ini - $item['jumlah'];
-                }
-
-                DetailMutasiBarang::create([
-                    'mutasi_barang_id' => $mutasiBarang->id,
+        // Insert + update
+        foreach ($validated['items'] as $item) {
+            if (!empty($item['id'])) {
+                // Update
+                $mutasi->detail()->where('id', $item['id'])->update([
                     'barang_id' => $item['barang_id'],
                     'jumlah' => $item['jumlah'],
                     'catatan' => $item['catatan'] ?? null,
                 ]);
-
-                $barang->update(['stok_saat_ini' => $stokBaru]);
+            } else {
+                // Insert baru
+                $mutasi->detail()->create([
+                    'barang_id' => $item['barang_id'],
+                    'jumlah' => $item['jumlah'],
+                    'catatan' => $item['catatan'] ?? null,
+                ]);
             }
-
-            DB::commit();
-
-            return redirect()
-                ->route('mutasi-barang.index')
-                ->with('success', 'Mutasi barang berhasil diperbarui.');
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', $e->getMessage());
         }
+
+        return redirect()->route('mutasi-barang.index')
+            ->with('success', 'Data Mutasi Barang berhasil diperbarui.');
     }
 
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(MutasiBarang $mutasiBarang)
+    public function destroy($id)
     {
-        //
+        $mutasiBarang = MutasiBarang::findOrFail($id);
+
+        $mutasiBarang->delete();
+
+        return redirect()
+            ->route('mutasi-barang.index')
+            ->with('success', 'Data barang masuk dan semua detailnya berhasil dihapus.');
     }
 
 }
