@@ -8,6 +8,7 @@ use App\Http\Controllers\BarangMasukController;
 use App\Http\Controllers\PermintaanController;
 use App\Http\Controllers\StockOpnameController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\BarangUsangController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -27,6 +28,7 @@ Route::get('/', function () {
 // Route::get('/dashboard', function () {
 //     return Inertia::render('Dashboard');
 // })->middleware(['auth', 'verified'])->name('dashboard');
+
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -65,13 +67,16 @@ Route::middleware('auth')->group(function () {
 
 
     // Operator
-    Route::get('/barang-masuk', [BarangMasukController::class, 'index'])->name('barang-masuk.index');
-    Route::post('/barang-masuk', [BarangMasukController::class, 'store'])->name('barang-masuk.store');
-    Route::get('/barang-masuk/{id}', [BarangMasukController::class, 'show'])->name('barang-masuk.show');
-    Route::get('/barang-masuk/{id}/edit', [BarangMasukController::class, 'edit'])->name('barang-masuk.edit');
-    Route::put('/barang-masuk/{id}', [BarangMasukController::class, 'update'])->name('barang-masuk.update');
-    Route::delete('/barang-masuk/{id}', [BarangMasukController::class, 'destroy'])->name('barang-masuk.destroy');
+
+    // // Barang Masuk Routes
+    // Route::get('/barang-masuk', [BarangMasukController::class, 'index'])->name('barang-masuk.index');
+    // Route::post('/barang-masuk', [BarangMasukController::class, 'store'])->name('barang-masuk.store');
+    // Route::get('/barang-masuk/{id}', [BarangMasukController::class, 'show'])->name('barang-masuk.show');
+    // Route::get('/barang-masuk/{id}/edit', [BarangMasukController::class, 'edit'])->name('barang-masuk.edit');
+    // Route::put('/barang-masuk/{id}', [BarangMasukController::class, 'update'])->name('barang-masuk.update');
+    // Route::delete('/barang-masuk/{id}', [BarangMasukController::class, 'destroy'])->name('barang-masuk.destroy');
     
+    // Mutasi Barang Routes
     Route::get('/mutasi-barang', [MutasiBarangController::class, 'index'])->name('mutasi-barang.index');
     Route::get('/mutasi-barang/create', [MutasiBarangController::class, 'create'])->name('mutasi-barang.create');
     Route::post('/mutasi-barang', [MutasiBarangController::class, 'store'])->name('mutasi-barang.store');
@@ -80,21 +85,30 @@ Route::middleware('auth')->group(function () {
     Route::put('/mutasi-barang/{id}', [MutasiBarangController::class, 'update'])->name('mutasi-barang.update');
     Route::delete('/mutasi-barang/{id}', [MutasiBarangController::class, 'destroy'])->name('mutasi-barang.destroy');
 
+    // Permintaan Routes
     Route::get('/permintaan', [PermintaanController::class, 'index'])->name('permintaan.index');
     Route::get('/permintaan/{id}/proses', [PermintaanController::class, 'proses'])->name('permintaan.proses');
     Route::post('/permintaan/{id}/proses', [PermintaanController::class, 'prosesStore'])->name('permintaan.proses.store');
     Route::post('/permintaan/{id}/approve', [PermintaanController::class, 'approve'])->name('permintaan.approve');
     Route::post('/permintaan/{id}/reject', [PermintaanController::class, 'reject'])->name('permintaan.reject');
-    
     Route::get('/permintaan/riwayat', [PermintaanController::class, 'riwayat'])->name('permintaan.riwayat');
     Route::get('/permintaan/detail/{id}', [PermintaanController::class, 'detail'])->name('permintaan.detail');
 
+    // Stock Opname Routes
     Route::get('/stock-opname', [StockOpnameController::class, 'index'])->name('stock-opname.index');
     Route::post('/stock-opname', [StockOpnameController::class, 'store'])->name('stock-opname.store');
     Route::get('/stock-opname/{id}/edit', [StockOpnameController::class, 'edit'])->name('stock-opname.edit');
     Route::put('/stock-opname/{id}', [StockOpnameController::class, 'update'])->name('stock-opname.update');
     Route::get('/stock-opname/{id}', [StockOpnameController::class, 'show'])->name('stock-opname.show');
     Route::delete('/stock-opname/{id}', [StockOpnameController::class, 'destroy'])->name('stock-opname.destroy');
+    
+    //Barang Usang Routes
+    Route::get('/barang-usang', [BarangUsangController::class, 'index'])->name('barang-usang.index');
+    Route::get('/barang-usang/create', [BarangUsangController::class, 'create'])->name('barang-usang.create');
+    Route::post('/barang-usang', [BarangUsangController::class, 'store'])->name('barang-usang.store');
+    Route::get('/barang-usang/{barangUsang}/edit', [BarangUsangController::class, 'edit'])->name('barang-usang.edit');
+    Route::put('/barang-usang/{barangUsang}', [BarangUsangController::class, 'update'])->name('barang-usang.update');
+    Route::delete('/barang-usang/{barangUsang}', [BarangUsangController::class, 'destroy'])->name('barang-usang.destroy');
 
 
     // Route::post('/detail-barang-masuk', [DetailBarangMasukController::class, 'store'])->name('detail-barang-masuk.store');
@@ -103,7 +117,6 @@ Route::middleware('auth')->group(function () {
     // Pemohon
     Route::get('/permintaan/create', [PermintaanController::class, 'create'])->name('permintaan.create');
     Route::post('/permintaan', [PermintaanController::class, 'store'])->name('permintaan.store');
-    
 });
 
 
