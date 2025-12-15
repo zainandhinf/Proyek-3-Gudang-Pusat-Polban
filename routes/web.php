@@ -124,6 +124,10 @@ Route::middleware('auth')->group(function () {
     // Laporan Routes
     Route::get('/laporan/mutasi', [LaporanController::class, 'mutasi'])->name('laporan.mutasi');
     Route::get('/laporan/mutasi/export', [LaporanController::class, 'exportMutasi'])->name('laporan.mutasi.export');
+    Route::get('/laporan/permintaan', [LaporanController::class, 'permintaan'])->name('laporan.permintaan');
+    Route::get('/laporan/permintaan/export', [LaporanController::class, 'exportPermintaan'])->name('laporan.permintaan.export');
+    Route::get('/laporan/stock-opname', [LaporanController::class, 'stockOpname'])->name('laporan.stock-opname');
+    Route::get('/laporan/stock-opname/export', [LaporanController::class, 'exportStockOpname'])->name('laporan.stock-opname.export');
 });
 
 
