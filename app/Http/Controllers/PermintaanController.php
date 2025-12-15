@@ -20,10 +20,9 @@ class PermintaanController extends Controller
      */
     public function index()
     {
-        $permintaan = Permintaan::with(['pemohon'])->get();
-
         return Inertia::render('Permintaan/index', [
-            'permintaans' => $permintaan,
+            'permintaans' => Permintaan::with('pemohon')->paginate(5),
+            'filters' => request()->all('search'),
         ]);
     }
 

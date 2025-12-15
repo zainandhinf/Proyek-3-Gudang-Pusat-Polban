@@ -1,465 +1,191 @@
 <script setup>
-import { ref } from "vue";
-import { useForm, Link } from "@inertiajs/vue3";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { ref, watch, computed } from 'vue';
+import { throttle } from 'lodash';
+import { Search, Upload, Plus, Edit2, Trash2 } from "lucide-vue-next";
 
-// const props = defineProps({
-//   // barangs: { type: Array, required: true },
-//   barangs: Array,
-//   // riwayatBarang: { type: Array, default: () => [] },
-//   riwayatBarang: Object,
-// });
-
+// Props
 const props = defineProps({
-  barangs: Array,
-  barangmasuks: Object,
+    barangs: Object,
+    filters: Object,
 });
 
-// -------------------------------
-// FORM UTAMA
-// -------------------------------
-const form = useForm({
-  tanggal_masuk: new Date().toISOString().split("T")[0],
-  keterangan: "",
-  items: [
-    {
-      barang_id: "",
-      jumlah: 0,
-    },
-  ],
-});
+// User Role Logic
+const page = usePage();
+const user = computed(() => page.props.auth.user);
+const isOperator = computed(() => user.value.role === 'operator');
 
-// -------------------------------
-// RIWAYAT
-// -------------------------------
-// const riwayatBarang = ref([...props.riwayatBarang]);
+// State Pencarian
+const search = ref(props.filters?.search ?? '');
 
-// -------------------------------
-// TAMBAH ITEM BARU
-// -------------------------------
-function addItem() {
-  form.items.push({
-    barang_id: "",
-    satuan: "",
-    stok_saat_ini: 0,
-    jumlah: null,
-  });
-}
+// Helper Format Rupiah
+const formatRupiah = (number) => {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0
+    }).format(number);
+};
 
-// -------------------------------
-// SAAT PILIH BARANG
-// -------------------------------
-function onBarangSelect(index) {
-  const item = form.items[index];
-  const barang = props.barangs.find((b) => b.id === item.barang_id);
+// Logic Search
+watch(search, throttle((value) => {
+    router.get(route('barangs.index'), { search: value }, { preserveState: true, replace: true });
+}, 300));
 
-  if (!barang) return;
-
-  item.satuan = barang.satuan?.nama_satuan ?? "-";
-  item.stok_saat_ini = barang.stok_saat_ini ?? 0;
-}
-
-// -------------------------------
-// HAPUS ITEM
-// -------------------------------
-function removeItem(index) {
-  form.items.splice(index, 1);
-}
-
-// -------------------------------
-// RESET FORM
-// -------------------------------
-function resetForm() {
-  form.reset();
-  form.items = [];
-  form.tanggal_masuk = new Date().toISOString().split("T")[0];
-}
-
-// -------------------------------
-// SIMPAN DATA
-// -------------------------------
-// function simpanData() {
-//   // Jika ingin kirim ke backend, cukup:
-//   // form.post("/barang-masuk", { onSuccess: () => resetForm() });
-
-//   // DEMO: MASUKKAN KE RIWAYAT
-//   form.items.forEach((item) => {
-//     const barang = props.barangs.find((b) => b.id === item.barang_id);
-
-//     riwayatBarang.value.unshift({
-//       id: Date.now(),
-//       tanggal: form.tanggal_masuk,
-//       nama: barang?.nama_barang || "Tidak Dikenal",
-//       jumlah: `${item.jumlah} ${item.satuan}`,
-//       operator: "User Login",
-//       catatan: form.keterangan,
-//     });
-//   });
-
-//   resetForm();
-// }
-function simpanData() {
-  form.post("/barang-masuk", {
-    onSuccess: () => resetForm(),
-  });
-}
+// Logic Delete
+const deleteBarang = (id) => {
+    if (confirm('Apakah Anda yakin ingin menghapus data barang ini?')) {
+        router.delete(route('barangs.destroy', id), {
+            preserveScroll: true,
+        });
+    }
+};
 </script>
 
 <template>
-  <AuthenticatedLayout>
-    <div class="py-8 px-4 md:px-6 lg:px-8">
-      <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">Barang Masuk</h1>
-        <p class="mt-1 text-sm text-gray-600">
-          Kelola data barang yang masuk ke inventory
-        </p>
-      </div>
+    <Head title="Master Data Barang" />
 
-      <div class="bg-white rounded-lg shadow-md overflow-hidden">
-        <div class="p-6">
-          <h2 class="text-xl font-semibold text-gray-800 border-b pb-4">
-            Tambah Barang Masuk
-          </h2>
-          <p class="text-sm text-gray-500 mt-1">
-            Input data barang yang masuk ke inventory
-          </p>
-
-          <form @submit.prevent="simpanData" class="mt-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label for="tanggal_masuk" class="block text-sm font-medium text-gray-700"
-                  >Tanggal Masuk</label
-                >
-                <input
-                  type="date"
-                  id="tanggal_masuk"
-                  v-model="form.tanggal_masuk"
-                  required
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500"
-                />
-              </div>
-
-              <div>
-                <label for="keterangan" class="block text-sm font-medium text-gray-700"
-                  >Keterangan</label
-                >
-                <input
-                  type="text"
-                  id="keterangan"
-                  v-model="form.keterangan"
-                  placeholder="Tambahkan keterangan (opsional)"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500"
-                />
-              </div>
+    <AuthenticatedLayout>
+        <div class="py-8 px-4 md:px-6 lg:px-8">
+            
+            <div class="mb-6">
+                <h1 class="text-3xl font-bold text-gray-900">Master Data Barang</h1>
+                <p class="mt-1 text-sm text-gray-600">Kelola semua data barang, stok, dan harga di gudang.</p>
             </div>
 
-            <div class="mb-6 mt-6">
-              <h3 class="text-lg font-semibold text-blue-900 flex items-center mb-4">
-                <svg
-                  class="w-5 h-5 text-teal-600 mr-2"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"
-                  ></path>
-                </svg>
-                Daftar Barang yang Diajukan
-              </h3>
-              <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                  <thead class="bg-gray-50">
-                    <tr>
-                      <th
-                        class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-12"
-                      >
-                        No
-                      </th>
-                      <th
-                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Nama Barang
-                      </th>
-                      <th
-                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Satuan
-                      </th>
-                      <th
-                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Jumlah
-                      </th>
-                      <th
-                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Stok Saat Ini
-                      </th>
-                      <th
-                        class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
-                      >
-                        Aksi
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody class="bg-white divide-y divide-gray-200">
-                    <tr v-if="form.items.length === 0">
-                      <td colspan="6" class="px-4 py-4 text-center text-sm text-gray-500">
-                        Belum ada barang yang ditambahkan.
-                      </td>
-                    </tr>
-                    <tr v-for="(item, index) in form.items" :key="index">
-                      <td
-                        class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-center"
-                      >
-                        {{ index + 1 }}
-                      </td>
-                      <td class="px-4 py-3 whitespace-nowrap" style="min-width: 150px">
-                        <select
-                          v-model="item.barang_id"
-                          @change="onBarangSelect(index)"
-                          class="w-full p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
-                          required
-                        >
-                          <option value="" disabled>Pilih Barang</option>
-                          <option v-for="item in barangs" :key="item.id" :value="item.id">
-                            {{ item.nama_barang }}
-                          </option>
-                        </select>
-                        <div
-                          v-if="form.errors[`items.${index}.barang_id`]"
-                          class="text-red-500 text-xs"
-                        >
-                          {{ form.errors[`items.${index}.barang_id`] }}
-                        </div>
-                      </td>
-                      <td class="px-4 py-3 whitespace-nowrap" style="width: 120px">
-                        <input
-                          type="text"
-                          v-model="item.satuan"
-                          class="w-full p-2 border border-gray-300 rounded-md text-sm bg-gray-50"
-                          placeholder="Satuan"
-                          disabled
-                        />
-                      </td>
-                      <td class="px-4 py-3 whitespace-nowrap" style="width: 100px">
-                        <input
-                          type="number"
-                          v-model="item.jumlah"
-                          min="1"
-                          class="w-full p-2 border border-gray-300 rounded-md text-sm"
-                          required
-                        />
-                      </td>
-                      <td class="px-4 py-3 whitespace-nowrap" style="width: 100px">
-                        <input
-                          type="number"
-                          v-model="item.stok_saat_ini"
-                          class="w-full p-2 border border-gray-300 rounded-md text-sm"
-                          placeholder="0"
-                          disabled
-                        />
-                      </td>
-                      <td class="px-4 py-3 whitespace-nowrap text-center">
-                        <button
-                          @click.prevent="removeItem(index)"
-                          class="text-red-500 hover:text-red-700"
-                          title="Hapus barang"
-                        >
-                          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                              fill-rule="evenodd"
-                              d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                              clip-rule="evenodd"
-                            ></path>
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div class="flex justify-between items-center mt-4">
-                <button
-                  @click.prevent="addItem"
-                  class="flex items-center px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
-                >
-                  <svg
-                    class="w-4 h-4 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                    ></path>
-                  </svg>
-                  Tambah Barang
+            <div v-if="$page.props.flash?.success" class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md">
+                {{ $page.props.flash.success }}
+            </div>
+            <div v-if="$page.props.flash?.error" class="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                {{ $page.props.flash.error }}
+            </div>
+
+            <div v-if="isOperator" class="flex justify-end mt-6 gap-x-3">
+                <button class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 shadow-sm transition">
+                    <Upload class="w-4 h-4 mr-2" />
+                    Import Excel
                 </button>
-                <p class="text-xs text-gray-500">
-                  * Jika kebutuhan lebih dari 15 item, sistem akan otomatis membuat
-                  halaman tambahan.
-                </p>
-              </div>
+                
+                <Link :href="route('barangs.create')" class="flex items-center px-4 py-2 text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-sm transition">
+                    <Plus class="w-4 h-4 mr-2" />
+                    Tambah Barang
+                </Link>
             </div>
 
-            <div class="flex justify-end gap-4 mt-6 pt-6 border-t">
-              <button
-                type="button"
-                @click="resetForm"
-                class="py-2 px-4 rounded-md bg-gray-600 text-white font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              >
-                Reset
-              </button>
-              <button
-                type="submit"
-                class="py-2 px-4 rounded-md bg-teal-600 text-white font-medium hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
-              >
-                Simpan
-              </button>
+            <div class="mt-8 bg-white rounded-lg shadow-md overflow-hidden ring-1 ring-gray-900/5">
+                
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-800">Daftar Barang</h3>
+                            <p class="text-sm text-gray-500 mt-1">List seluruh item inventory</p>
+                        </div>
+                        
+                        <div class="relative w-full md:w-72">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <Search class="w-5 h-5 text-gray-400" />
+                            </div>
+                            <input 
+                                type="text" 
+                                v-model="search"
+                                placeholder="Cari kode atau nama barang..."
+                                class="w-full py-2 pl-10 text-sm border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 shadow-sm"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Info Barang</th>
+                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Satuan</th>
+                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Harga</th>
+                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Stok</th>
+                                <th v-if="isOperator" class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-if="barangs.data.length === 0">
+                                <td :colspan="isOperator ? 5 : 4" class="px-6 py-8 text-center text-gray-500">
+                                    Data barang tidak ditemukan.
+                                </td>
+                            </tr>
+                            
+                            <tr v-for="barang in barangs.data" :key="barang.id" class="hover:bg-gray-50 transition-colors">
+                                
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-10 w-10">
+                                            <img v-if="barang.foto" :src="`/storage/${barang.foto}`" class="h-10 w-10 rounded-md object-cover border" alt="Foto Barang">
+                                            <div v-else class="h-10 w-10 rounded-md bg-gray-100 flex items-center justify-center text-gray-400 text-xs font-medium border border-gray-200">No Img</div>
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">{{ barang.nama_barang }}</div>
+                                            <div class="text-xs text-teal-600 font-mono bg-teal-50 px-1.5 py-0.5 rounded inline-block mt-1 border border-teal-100">{{ barang.kode_barang }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ barang.satuan?.nama_satuan || '-' }}
+                                </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                                    {{ formatRupiah(barang.harga) }}
+                                </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                    <span class="font-bold px-2 py-1 rounded text-xs" :class="barang.stok_saat_ini > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+                                        {{ barang.stok_saat_ini }}
+                                    </span>
+                                </td>
+
+                                <td v-if="isOperator" class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                    <div class="flex justify-center gap-2">
+                                        <Link :href="route('barangs.edit', barang.id)" class="p-1.5 text-teal-600 hover:text-teal-800 hover:bg-teal-50 rounded transition-colors" title="Edit">
+                                            <Edit2 class="w-4 h-4" />
+                                        </Link>
+                                        <button @click="deleteBarang(barang.id)" class="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors" title="Hapus">
+                                            <Trash2 class="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </td>
+
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div v-if="barangs.data.length > 0" class="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50/50">
+                    <div class="text-sm text-gray-700">
+                        Menampilkan <span class="font-medium">{{ barangs.from ?? 0 }}</span> sampai <span class="font-medium">{{ barangs.to ?? 0 }}</span> dari <span class="font-medium">{{ barangs.total }}</span> data
+                    </div>
+                    <div class="flex gap-1">
+                        <template v-for="(link, index) in barangs.links" :key="index">
+                            <Link 
+                                v-if="link.url"
+                                :href="link.url"
+                                preserve-scroll
+                                v-html="link.label"
+                                class="relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md transition-colors shadow-sm"
+                                :class="{
+                                    'bg-teal-600 border-teal-600 text-white hover:bg-teal-700': link.active,
+                                    'bg-white border-gray-300 text-gray-700 hover:bg-gray-50': !link.active
+                                }"
+                            />
+                            <span 
+                                v-else
+                                v-html="link.label"
+                                class="relative inline-flex items-center px-4 py-2 text-sm font-medium border bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed rounded-md shadow-sm"
+                            ></span>
+                        </template>
+                    </div>
+                </div>
+
             </div>
-          </form>
         </div>
-      </div>
-
-      <div class="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
-        <div class="p-6">
-          <div
-            class="flex flex-col md:flex-row justify-between items-start md:items-center"
-          >
-            <div>
-              <h2 class="text-xl font-semibold text-gray-800">Riwayat Barang Masuk</h2>
-              <p class="text-sm text-gray-500 mt-1">
-                Daftar barang yang telah ditambahkan
-              </p>
-            </div>
-            <div class="flex gap-2 mt-4 md:mt-0">
-              <button
-                class="py-2 px-4 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Filter
-              </button>
-              <button
-                class="py-2 px-4 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Export
-              </button>
-            </div>
-          </div>
-
-          <div class="mt-6 overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Tanggal Masuk
-                  </th>
-
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Operator
-                  </th>
-
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Keterangan
-                  </th>
-
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Aksi
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-if="props.barangmasuks.data.length === 0">
-                  <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                    Tidak ada data riwayat.
-                  </td>
-                </tr>
-
-                <tr
-                  v-for="item in props.barangmasuks.data"
-                  :key="item.id"
-                  class="hover:bg-gray-50"
-                >
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {{ item.tanggal_masuk }}
-                  </td>
-
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ item.dicatat_oleh.name }}
-                  </td>
-
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ item.keterangan }}
-                  </td>
-
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Link
-                      :href="route('barang-masuk.show', item.id)"
-                      class="text-cyan-600 hover:text-cyan-900"
-                    >
-                      Detail
-                    </Link>
-                    <Link
-                      :href="route('barang-masuk.edit', item.id)"
-                      class="ml-4 text-cyan-600 hover:text-cyan-900"
-                    >
-                      Edit
-                    </Link>
-                    <Link
-                      :href="route('barang-masuk.destroy', item.id)"
-                      method="delete"
-                      ask="Yakin hapus data ini?"
-                      as="button"
-                      class="ml-4 text-red-600 hover:text-red-900"
-                    >
-                      Hapus
-                    </Link>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div
-            class="mt-5 flex items-center justify-between border-t border-gray-200 pt-4"
-          >
-            <div class="text-sm text-gray-700">
-              Menampilkan <span class="font-medium">1</span>-
-              <span class="font-medium">{{ props.barangmasuks.data.length }}</span> dari
-              <span class="font-medium">{{ props.barangmasuks.data.length }}</span> data
-            </div>
-            <div class="flex gap-1">
-              <button
-                class="py-2 px-3 rounded-md border bg-white text-sm hover:bg-gray-50 disabled:opacity-50"
-                disabled
-              >
-                Previous
-              </button>
-              <button
-                class="py-2 px-3 rounded-md border bg-white text-sm hover:bg-gray-50"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </AuthenticatedLayout>
+    </AuthenticatedLayout>
 </template>
