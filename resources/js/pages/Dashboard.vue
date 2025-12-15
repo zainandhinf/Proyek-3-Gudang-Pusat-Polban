@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { onMounted } from 'vue';
-// import Chart from 'chart.js/auto'; // Pastikan library ini sudah diinstall: npm install chart.js
+import Chart from 'chart.js/auto'; // Pastikan library ini sudah diinstall: npm install chart.js
 
 const props = defineProps({
     // Data Operator
@@ -139,7 +139,7 @@ onMounted(() => {
                             <h3 class="text-lg font-bold text-slate-800">Statistik Permintaan & Pengeluaran</h3>
                             </div>
                         <div class="h-80 w-full relative">
-                            <canvas id="chartPermintaan"></canvas>
+                            <canvas id="chartPermintaan" class="pointer-events-none"></canvas>
                         </div>
                     </div>
 

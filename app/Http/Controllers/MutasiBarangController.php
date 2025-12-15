@@ -22,6 +22,8 @@ class MutasiBarangController extends Controller
             $q = $request->input('search');
             $query->where(function($qq) use ($q) {
                 $qq->where('nomor_mutasi','like',"%{$q}%")
+                ->orWhere('no_dokumen','like',"%{$q}%")
+                ->orWhere('no_bukti','like',"%{$q}%")  
                 ->orWhere('keterangan','like',"%{$q}%");
             });
         }
@@ -38,8 +40,10 @@ class MutasiBarangController extends Controller
             'mutasis' => $mutasis->through(fn($m) => [
                 'id' => $m->id,
                 'nomor_mutasi' => $m->nomor_mutasi,
+                'no_dokumen' => $m->no_dokumen,
+                'no_bukti' => $m->no_bukti,
                 'jenis_mutasi' => $m->jenis_mutasi,
-                'tanggal_mutasi' => $m->tanggal_mutasi->format('d-m-Y'),
+                'tanggal_mutasi' => $m->tanggal_mutasi,
                 'keterangan' => $m->keterangan,
                 'dicatat_oleh' => [ 'id' => $m->dicatatOleh->id ?? null, 'name' => $m->dicatatOleh->name ?? '-' ],
             ]),
@@ -69,6 +73,8 @@ class MutasiBarangController extends Controller
         $validated = $request->validate([
             'jenis_mutasi' => 'required|in:masuk,keluar',
             'tanggal_mutasi' => 'required|date',
+            'no_dokumen' => 'nullable|string|max:255',
+            'no_bukti' => 'nullable|string|max:255',
             'keterangan' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.barang_id' => 'required|exists:barangs,id',
@@ -86,6 +92,8 @@ class MutasiBarangController extends Controller
             $mutasi = MutasiBarang::create([
                 'jenis_mutasi' => $validated['jenis_mutasi'],
                 'tanggal_mutasi' => $validated['tanggal_mutasi'],
+                'no_dokumen' => $validated['no_dokumen'] ?? null,
+                'no_bukti' => $validated['no_bukti'] ?? null,
                 'keterangan' => $validated['keterangan'] ?? null,
                 'dicatat_oleh_user_id' => auth()->id(),
             ]);
@@ -152,6 +160,8 @@ class MutasiBarangController extends Controller
             'mutasi' => [
                 'id' => $mutasi->id,
                 'nomor_mutasi' => $mutasi->nomor_mutasi,
+                'no_dokumen' => $mutasi->no_dokumen,
+                'no_bukti' => $mutasi->no_bukti,
                 'jenis_mutasi' => $mutasi->jenis_mutasi,
                 'tanggal_mutasi' => $mutasi->tanggal_mutasi->format('d-m-Y'),
                 'keterangan' => $mutasi->keterangan,
@@ -207,19 +217,16 @@ class MutasiBarangController extends Controller
 
     public function edit($id)
     {
-        $mutasi = MutasiBarang::with([
-            'detail.barang.satuan'
-        ])->findOrFail($id);
-
-        $barangs = Barang::with(['satuan'])
-            ->orderBy('nama_barang')
-            ->get();
+        $mutasi = MutasiBarang::with(['detail.barang.satuan'])->findOrFail($id);
+        $barangs = Barang::with(['satuan'])->orderBy('nama_barang')->get();
 
         return Inertia::render('MutasiBarang/edit', [
             'mutasi' => [
                 'id' => $mutasi->id,
                 'jenis_mutasi' => $mutasi->jenis_mutasi,
                 'tanggal_mutasi' => $mutasi->tanggal_mutasi->format('Y-m-d'),
+                'no_dokumen' => $mutasi->no_dokumen,
+                'no_bukti' => $mutasi->no_bukti,
                 'keterangan' => $mutasi->keterangan,
                 'detail' => $mutasi->detail->map(fn($d) => [
                     'id' => $d->id,
@@ -247,8 +254,9 @@ class MutasiBarangController extends Controller
         $validated = $request->validate([
             'jenis_mutasi' => ['required', 'in:masuk,keluar'],
             'tanggal_mutasi' => ['required', 'date'],
+            'no_dokumen' => 'nullable|string|max:255',
+            'no_bukti' => 'nullable|string|max:255',
             'keterangan' => ['nullable', 'string'],
-
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['nullable', 'integer'],
             'items.*.barang_id' => ['required', 'exists:barangs,id'],
@@ -262,6 +270,8 @@ class MutasiBarangController extends Controller
         $mutasi->update([
             'jenis_mutasi' => $validated['jenis_mutasi'],
             'tanggal_mutasi' => $validated['tanggal_mutasi'],
+            'no_dokumen' => $validated['no_dokumen'],
+            'no_bukti' => $validated['no_bukti'],
             'keterangan' => $validated['keterangan'],
         ]);
 

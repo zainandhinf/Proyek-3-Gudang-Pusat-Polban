@@ -44,7 +44,7 @@ const isRouteActive = (routeBase) => {
 <template>
     <div class="flex min-h-screen bg-gray-50 text-gray-900 dark:bg-dark-bg dark:text-dark-text transition-colors duration-300">
         
-        <aside class="w-64 bg-white border-r border-gray-200 shadow-lg fixed left-0 top-[80px] bottom-0 overflow-y-auto dark:bg-dark-card dark:border-dark-border hidden lg:block z-0">
+        <aside class="w-64 bg-white border-r border-gray-200 shadow-lg fixed left-0 top-[80px] bottom-0 overflow-y-auto dark:bg-dark-card dark:border-dark-border hidden lg:block z-10">
             <nav class="p-4 space-y-2">
                 
                 <Link :href="route('dashboard')" 
@@ -139,11 +139,19 @@ const isRouteActive = (routeBase) => {
 
                     <div class="pt-4 border-t border-gray-200 dark:border-dark-border">
                         <div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3 px-4 dark:text-dark-muted">Laporan</div>
-                        <Link href="#" 
+                        <!-- <Link href="#" 
                               :class="{ 'bg-polban-light text-white': isRouteActive('laporan.*'), 'text-gray-700 hover:bg-gray-100 dark:text-dark-muted dark:hover:bg-gray-700/30': !isRouteActive('laporan.*') }"
                               class="flex items-center gap-3 px-4 py-3 rounded-lg w-full transition-colors">
                             <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor" :class="{ 'text-white': isRouteActive('laporan.*') }"><path d="M2 0C0.896875 0 0 0.896875 0 2V14C0 15.1031 0.896875 16 2 16H10C11.1031 16 12 15.1031 12 14V5H8C7.44687 5 7 4.55313 7 4V0H2ZM8 0V4H12L8 0ZM3.5 8H8.5C8.775 8 9 8.225 9 8.5C9 8.775 8.775 9 8.5 9H3.5C3.225 9 3 8.775 3 8.5C3 8.225 3.225 8 3.5 8ZM3.5 10H8.5C8.775 10 9 10.225 9 10.5C9 10.775 8.775 11 8.5 11H3.5C3.225 11 3 10.775 3 10.5C3 10.225 3.225 10 3.5 10ZM3.5 12H8.5C8.775 12 9 12.225 9 12.5C9 12.775 8.775 13 8.5 13H3.5C3.225 13 3 12.775 3 12.5C3 12.225 3.225 12 3.5 12Z"/></svg>
                             <span class="text-base">Laporan</span>
+                        </Link> -->
+                        <Link :href="route('laporan.mutasi')" 
+                            :class="{ 'bg-polban-light text-white': isRouteActive('laporan.mutasi'), 'text-gray-700 hover:bg-gray-100 dark:text-dark-muted dark:hover:bg-gray-700/30': !isRouteActive('laporan.mutasi') }"
+                            class="flex items-center gap-3 px-4 py-3 rounded-lg w-full transition-colors">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" :class="{ 'text-white': isRouteActive('laporan.mutasi') }">
+                                <path d="M12 0H4C2.9 0 2 0.9 2 2V14C2 15.1 2.9 16 4 16H12C13.1 16 14 15.1 14 14V2C14 0.9 13.1 0 12 0ZM11 13H5V12H11V13ZM11 10H5V9H11V10ZM11 7H5V6H11V7Z"/> 
+                            </svg>
+                            <span class="text-base">Laporan Mutasi</span>
                         </Link>
                     </div>
                 </div>
@@ -168,7 +176,7 @@ const isRouteActive = (routeBase) => {
         </aside>
         
         <div class="flex-1 lg:ml-64">
-            <header class="bg-white border-b border-gray-200 shadow-sm fixed top-0 left-0 right-0 z-10 dark:bg-dark-card dark:border-dark-border">
+            <header class="bg-white border-b border-gray-200 shadow-sm fixed top-0 left-0 right-0 z-50 dark:bg-dark-card dark:border-dark-border">
                 <div class="flex items-center justify-between px-6 py-4">
                     
                     <div class="flex items-center gap-3">
@@ -211,8 +219,8 @@ const isRouteActive = (routeBase) => {
                         <div class="relative">
                             <Dropdown align="right" width="48">
                                 <template #trigger>
-                                    <button class="flex items-center gap-3 cursor-pointer focus:outline-none transition ease-in-out duration-150">
-                                        <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-semibold text-gray-500 dark:bg-gray-600 dark:text-gray-300">
+                                    <button class="flex items-center gap-3 cursor-pointer focus:outline-none focus:ring-0 border-none bg-transparent transition ease-in-out duration-150">
+                                        <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-semibold text-gray-500 dark:bg-gray-600 dark:text-gray-300 ring-2 ring-transparent group-hover:ring-teal-500 transition-all">
                                             {{ user.name.charAt(0).toUpperCase() }}
                                         </div>
                                         <div class="hidden md:block text-left">
@@ -226,9 +234,9 @@ const isRouteActive = (routeBase) => {
                                 </template>
 
                                 <template #content>
-                                    <div class="bg-white dark:bg-dark-card rounded-md py-1"> 
-                                        <DropdownLink :href="route('profile.edit')"> Profile </DropdownLink>
-                                        <DropdownLink :href="route('logout')" method="post" as="button" class="text-red-600 dark:text-red-400 w-full text-left">
+                                    <div class="bg-white dark:bg-dark-card rounded-md py-1 focus:outline-none">
+                                        <DropdownLink :href="route('profile.edit')" class="focus:outline-none focus:ring-0"> Profile </DropdownLink>
+                                        <DropdownLink :href="route('logout')" method="post" as="button" class="text-red-600 dark:text-red-400 w-full text-left focus:outline-none focus:ring-0">
                                             Log Out
                                         </DropdownLink>
                                     </div>
@@ -327,10 +335,15 @@ const isRouteActive = (routeBase) => {
 
                             <div class="pt-4 border-t border-gray-200 dark:border-dark-border">
                                 <div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3 px-4 dark:text-dark-muted">Laporan</div>
-                                <Link href="#" 
+                                <!-- <Link href="#" 
                                       :class="{ 'bg-polban-light text-white': isRouteActive('laporan.*'), 'text-gray-700 hover:bg-gray-100 dark:text-dark-muted dark:hover:bg-gray-700/30': !isRouteActive('laporan.*') }" 
                                       class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors mb-2">
                                     <span class="text-base">Laporan</span>
+                                </Link> -->
+                                <Link href="#" 
+                                      :class="{ 'bg-polban-light text-white': isRouteActive('laporan.mutasi'), 'text-gray-700 hover:bg-gray-100 dark:text-dark-muted dark:hover:bg-gray-700/30': !isRouteActive('laporan.mutasi') }" 
+                                      class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors mb-2">
+                                    <span class="text-base">Laporan Mutasi</span>
                                 </Link>
                             </div>
                         </div>

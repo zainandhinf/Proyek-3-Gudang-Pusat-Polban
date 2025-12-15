@@ -9,6 +9,7 @@ use App\Http\Controllers\PermintaanController;
 use App\Http\Controllers\StockOpnameController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\BarangUsangController;
+use App\Http\Controllers\LaporanController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -117,6 +118,12 @@ Route::middleware('auth')->group(function () {
     // Pemohon
     Route::get('/permintaan/create', [PermintaanController::class, 'create'])->name('permintaan.create');
     Route::post('/permintaan', [PermintaanController::class, 'store'])->name('permintaan.store');
+
+
+
+    // Laporan Routes
+    Route::get('/laporan/mutasi', [LaporanController::class, 'mutasi'])->name('laporan.mutasi');
+    Route::get('/laporan/mutasi/export', [LaporanController::class, 'exportMutasi'])->name('laporan.mutasi.export');
 });
 
 

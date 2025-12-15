@@ -119,8 +119,7 @@ const deleteMutasi = (id) => {
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center w-16">No</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nomor Mutasi</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Info Mutasi</th> 
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keterangan</th>
                                 <th v-if="isOperator" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -137,24 +136,27 @@ const deleteMutasi = (id) => {
                             <tr v-for="(item, idx) in props.mutasis.data" :key="item.id" class="hover:bg-gray-50 transition-colors">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{{ props.mutasis.from + idx }}</td>
                                 
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono font-medium text-teal-700">
-                                    {{ item.nomor_mutasi }}
+                                <td class="px-6 py-4 text-sm">
+                                    <div class="font-mono font-bold text-teal-700">{{ item.nomor_mutasi }}</div>
+                                    
+                                    <div class="mt-1">
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                                            :class="item.jenis_mutasi === 'masuk' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'">
+                                            {{ item.jenis_mutasi.toUpperCase() }}
+                                        </span>
+                                    </div>
+
+                                    <div class="mt-2 text-xs text-gray-500 flex flex-col gap-0.5">
+                                        <span v-if="item.no_dokumen">Dok: {{ item.no_dokumen }}</span>
+                                        <span v-if="item.no_bukti">Bukti: {{ item.no_bukti }}</span>
+                                    </div>
                                 </td>
                                 
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <span 
-                                        class="px-2 py-1 rounded-full text-xs font-semibold"
-                                        :class="item.jenis_mutasi === 'masuk' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'"
-                                    >
-                                        {{ item.jenis_mutasi.toUpperCase() }}
-                                    </span>
-                                </td>
-                                
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 align-top">
                                     {{ formatDate(item.tanggal_mutasi) }}
                                 </td>
                                 
-                                <td class="px-6 py-4 text-sm text-gray-600 truncate max-w-xs">
+                                <td class="px-6 py-4 text-sm text-gray-600 align-top max-w-xs truncate">
                                     {{ item.keterangan || '-' }}
                                 </td>
                                 

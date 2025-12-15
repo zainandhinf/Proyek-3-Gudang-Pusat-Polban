@@ -15,7 +15,7 @@ class MutasiBarang extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'tanggal_mutasi' => 'datetime',
+        'tanggal_mutasi' => 'date',
     ];
 
 

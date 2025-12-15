@@ -15,8 +15,9 @@ return new class extends Migration
             $table->id();
             $table->enum('jenis_mutasi', ['masuk','keluar'])->index();
             $table->string('nomor_mutasi')->nullable()->unique();
-            $table->timestamp('tanggal_mutasi');
-            $table->string('no_surat')->nullable();
+            $table->string('no_dokumen')->nullable();
+            $table->string('no_bukti')->nullable();
+            $table->date('tanggal_mutasi');
             $table->text('keterangan')->nullable();
             $table->foreignId('permintaan_id')->nullable()->constrained('permintaans')->onDelete('set null');
             $table->foreignId('dicatat_oleh_user_id')->constrained('users');
