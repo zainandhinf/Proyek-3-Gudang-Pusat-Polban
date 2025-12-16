@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SatuanController;
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\LaporanController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -58,6 +59,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/barangs/{barang}', [BarangController::class, 'update'])->name('barangs.update');
     Route::delete('/barangs/{barang}', [BarangController::class, 'destroy'])->name('barangs.destroy');
 
+    Route::get('/laporan/kartu-stok', [LaporanController::class, 'kartuStok'])->name('laporan.kartu-stok');
 });
 
 
