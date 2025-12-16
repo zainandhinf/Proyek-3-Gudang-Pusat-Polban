@@ -137,6 +137,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/laporan/data-barang', [LaporanController::class, 'dataBarang'])->name('laporan.data-barang');
     Route::get('/laporan/data-barang/export', [LaporanController::class, 'exportDataBarang'])->name('laporan.data-barang.export');
     Route::post('/barangs/import', [BarangController::class, 'import'])->name('barangs.import');
+    
+    Route::get('/laporan/kartu-stok', [LaporanController::class, 'kartuStok'])->name('laporan.kartu-stok');
 });
 
 require __DIR__ . '/auth.php';
