@@ -169,6 +169,22 @@ const isRouteActive = (routeBase) => {
                             </svg>
                             <span class="text-base">Laporan Stock Opname</span>
                         </Link>
+                        <Link :href="route('laporan.barang-usang')" 
+                            :class="{ 'bg-polban-light text-white': isRouteActive('laporan.barang-usang'), 'text-gray-700 hover:bg-gray-100 dark:text-dark-muted dark:hover:bg-gray-700/30': !isRouteActive('laporan.barang-usang') }"
+                            class="flex items-center gap-3 px-4 py-3 rounded-lg w-full transition-colors">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" :class="{ 'text-white': isRouteActive('laporan.barang-usang') }">
+                                <path d="M12 0H4C2.9 0 2 0.9 2 2V14C2 15.1 2.9 16 4 16H12C13.1 16 14 15.1 14 14V2C14 0.9 13.1 0 12 0ZM11 13H5V12H11V13ZM11 10H5V9H11V10ZM11 7H5V6H11V7Z"/> 
+                            </svg>
+                            <span class="text-base">Laporan Barang Usang/Rusak</span>
+                        </Link>
+                        <Link :href="route('laporan.data-barang')" 
+                            :class="{ 'bg-polban-light text-white': isRouteActive('laporan.data-barang'), 'text-gray-700 hover:bg-gray-100 dark:text-dark-muted dark:hover:bg-gray-700/30': !isRouteActive('laporan.data-barang') }"
+                            class="flex items-center gap-3 px-4 py-3 rounded-lg w-full transition-colors">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" :class="{ 'text-white': isRouteActive('laporan.data-barang') }">
+                                <path d="M12 0H4C2.9 0 2 0.9 2 2V14C2 15.1 2.9 16 4 16H12C13.1 16 14 15.1 14 14V2C14 0.9 13.1 0 12 0ZM11 13H5V12H11V13ZM11 10H5V9H11V10ZM11 7H5V6H11V7Z"/> 
+                            </svg>
+                            <span class="text-base">Laporan Data Barang</span>
+                        </Link>
                     </div>
                 </div>
                 
@@ -370,6 +386,16 @@ const isRouteActive = (routeBase) => {
                                       :class="{ 'bg-polban-light text-white': isRouteActive('laporan.stock-opname'), 'text-gray-700 hover:bg-gray-100 dark:text-dark-muted dark:hover:bg-gray-700/30': !isRouteActive('laporan.stock-opname') }" 
                                       class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors mb-2">
                                     <span class="text-base">Laporan Stock Opname</span>
+                                </Link>
+                                <Link href="#" 
+                                      :class="{ 'bg-polban-light text-white': isRouteActive('laporan.barang-usang'), 'text-gray-700 hover:bg-gray-100 dark:text-dark-muted dark:hover:bg-gray-700/30': !isRouteActive('laporan.barang-usang') }" 
+                                      class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors mb-2">
+                                    <span class="text-base">Laporan Barang Usang/Rusak</span>
+                                </Link>
+                                <Link href="#" 
+                                      :class="{ 'bg-polban-light text-white': isRouteActive('laporan.data-barang'), 'text-gray-700 hover:bg-gray-100 dark:text-dark-muted dark:hover:bg-gray-700/30': !isRouteActive('laporan.data-barang') }" 
+                                      class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors mb-2">
+                                    <span class="text-base">Laporan Data Barang</span>
                                 </Link>
                             </div>
                         </div>

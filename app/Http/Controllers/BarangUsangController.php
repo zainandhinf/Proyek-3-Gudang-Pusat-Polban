@@ -2,83 +2,91 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Barang;
 use App\Models\BarangUsang;
+use App\Models\DetailBarangUsang;
+use App\Models\Barang;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Redirect;
 
 class BarangUsangController extends Controller
 {
     public function index(Request $request)
     {
-        $query = BarangUsang::query()->with('barang');
+        $query = BarangUsang::query()->with(['dicatatOleh', 'detail']);
 
-        if ($request->search) {
-            $query->whereHas('barang', function ($q) use ($request) {
-                $q->where('nama_barang', 'like', "%{$request->search}%")
-                  ->orWhere('kode_barang', 'like', "%{$request->search}%");
-            });
+        if ($request->filled('search')) {
+            $query->where('no_catat', 'like', '%' . $request->input('search') . '%')
+                  ->orWhere('no_bukti', 'like', '%' . $request->input('search') . '%');
         }
 
+        // Tampilkan data header
+        $barangUsangs = $query->latest()->paginate(10)->withQueryString();
+
         return Inertia::render('BarangUsang/index', [
-            'barangUsangs' => $query->latest()->paginate(10)->withQueryString(),
-            'filters' => $request->only(['search']),
+            'barangUsangs' => $barangUsangs,
+            'filters' => $request->only('search'),
         ]);
     }
 
     public function create()
     {
+        // Kirim data barang untuk dropdown
+        $barangs = Barang::with('satuan')->orderBy('nama_barang')->get();
         return Inertia::render('BarangUsang/create', [
-            'barangs' => Barang::all(), // Kirim data barang untuk dropdown
+            'barangs' => $barangs
         ]);
     }
 
     public function store(Request $request)
     {
+        // 1. Validasi Input (Sesuaikan nama field form)
         $request->validate([
-            'barang_id' => 'required|exists:barangs,id',
-            'tanggal_laporan' => 'required|date',
-            'jumlah' => 'required|integer|min:1',
-            'keterangan' => 'required|string',
+            'tanggal_catat' => 'required|date',
+            'no_bukti'      => 'required|string|max:255',
+            'items'         => 'required|array|min:1',
+            'items.*.barang_id' => 'required|exists:barangs,id',
+            'items.*.jumlah'    => 'required|integer|min:1',
         ]);
 
-        // Cek stok cukup atau tidak (opsional, tapi disarankan)
-        $barang = Barang::find($request->barang_id);
-        if ($barang->stok < $request->jumlah) {
-            return back()->withErrors(['jumlah' => 'Jumlah melebihi stok yang tersedia.']);
-        }
+        DB::transaction(function () use ($request) {
+            // 2. Buat Header (Gunakan no_catat & tanggal_catat, Hapus status)
+            $barangUsang = BarangUsang::create([
+                'no_catat' => 'BR-' . now()->format('YmdHis'), // Generate No Catat
+                'tanggal_catat' => $request->tanggal_catat,
+                'no_bukti' => $request->no_bukti,
+                'keterangan' => $request->keterangan,
+                'dicatat_oleh_user_id' => Auth::id(),
+            ]);
 
-        BarangUsang::create($request->all());
+            // 3. Buat Detail (Hapus satuan)
+            foreach ($request->items as $item) {
+                DetailBarangUsang::create([
+                    'barang_usang_id' => $barangUsang->id,
+                    'barang_id' => $item['barang_id'],
+                    'jumlah' => $item['jumlah'],
+                    'keterangan_rusak' => $item['catatan'] ?? null,
+                ]);
+            }
+        });
 
-        return Redirect::route('barang-usang.index')->with('success', 'Laporan barang usang berhasil dibuat.');
+        return redirect()->route('barang-usang.index')->with('success', 'Laporan barang rusak berhasil disimpan.');
     }
 
-    public function edit(BarangUsang $barangUsang)
+    public function show($id)
     {
-        return Inertia::render('BarangUsang/edit', [
-            'barangUsang' => $barangUsang,
-            'barangs' => Barang::all(),
+        $barangUsang = BarangUsang::with(['detail.barang', 'dicatatOleh'])->findOrFail($id);
+
+        return Inertia::render('BarangUsang/detail', [
+            'laporan' => $barangUsang,
+            'detail' => $barangUsang->detail
         ]);
     }
 
-    public function update(Request $request, BarangUsang $barangUsang)
+    public function destroy($id)
     {
-        $request->validate([
-            'barang_id' => 'required|exists:barangs,id',
-            'tanggal_laporan' => 'required|date',
-            'jumlah' => 'required|integer|min:1',
-            'keterangan' => 'required|string',
-        ]);
-
-        $barangUsang->update($request->all());
-
-        return Redirect::route('barang-usang.index')->with('success', 'Laporan diperbarui.');
-    }
-
-    public function destroy(BarangUsang $barangUsang)
-    {
-        $barangUsang->delete();
-        return Redirect::route('barang-usang.index')->with('success', 'Laporan dihapus.');
+        BarangUsang::findOrFail($id)->delete();
+        return redirect()->back()->with('success', 'Laporan berhasil dihapus.');
     }
 }

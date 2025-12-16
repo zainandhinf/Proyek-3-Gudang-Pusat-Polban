@@ -63,7 +63,7 @@ const deleteItem = (id) => {
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                             <h3 class="text-xl font-semibold text-gray-800">Daftar Kelompok Barang</h3>
-                            <p class="text-sm text-gray-500 mt-1">List kategori barang</p>
+                            <p class="text-sm text-gray-500 mt-1">List kelompok barang</p>
                         </div>
                         <div class="relative w-full md:w-72">
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">

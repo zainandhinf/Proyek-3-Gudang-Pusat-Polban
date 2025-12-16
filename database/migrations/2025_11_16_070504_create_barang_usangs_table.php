@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('barang_usangs', function (Blueprint $table) {
             $table->id();
+            $table->string('no_catat');
+            $table->date('tanggal_catat');
+            $table->string('no_bukti')->nullable();
+            $table->text('keterangan')->nullable();
             $table->foreignId('dicatat_oleh_user_id')->constrained('users');
-            $table->foreignId('barang_id')->constrained('barangs');
-            $table->integer('jumlah');
-            $table->string('alasan')->nullable();
-            $table->timestamp('tanggal_catat');
             $table->timestamps();
         });
     }

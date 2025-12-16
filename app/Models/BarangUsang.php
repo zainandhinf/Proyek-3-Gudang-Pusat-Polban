@@ -12,16 +12,16 @@ class BarangUsang extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'tanggal_catat' => 'datetime',
+        'tanggal_catat' => 'date',
     ];
 
-    public function dicatatOleh(): BelongsTo
+    public function detail()
     {
-        return $this->belongsTo(User::class, 'dicatat_oleh_user_id');
+        return $this->hasMany(DetailBarangUsang::class, 'barang_usang_id');
     }
 
-    public function barang(): BelongsTo
+    public function dicatatOleh()
     {
-        return $this->belongsTo(Barang::class);
+        return $this->belongsTo(User::class, 'dicatat_oleh_user_id');
     }
 }

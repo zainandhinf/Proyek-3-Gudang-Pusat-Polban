@@ -52,12 +52,6 @@ const submit = () => {
                                     <input type="text" v-model="form.nama_barang" class="mt-1 block w-full rounded-md border-gray-300">
                                 </div>
 
-                                <!-- <div>
-                                    <label class="block text-sm font-medium text-gray-700">Kategori</label>
-                                    <select v-model="form.kategori_id" class="mt-1 block w-full rounded-md border-gray-300">
-                                        <option v-for="kat in kategoris" :key="kat.id" :value="kat.id">{{ kat.nama_kategori }}</option>
-                                    </select>
-                                </div> -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Satuan</label>
                                     <select v-model="form.satuan_id" class="mt-1 block w-full rounded-md border-gray-300">

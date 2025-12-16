@@ -9,6 +9,11 @@ use App\Models\Permintaan;
 use App\Exports\LaporanPermintaanExport;
 use App\Models\StockOpname;
 use App\Exports\LaporanStockOpnameExport;
+use App\Models\BarangUsang;
+use App\Exports\LaporanBarangUsangExport;
+use App\Models\Barang;
+use App\Models\KelompokBarang;
+use App\Exports\LaporanDataBarangExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -319,6 +324,176 @@ class LaporanController extends Controller
             ])->setPaper('a4', 'portrait');
 
             return $pdf->download('Laporan_Stock_Opname_' . date('dmY_His') . '.pdf');
+        }
+
+        return back();
+    }
+
+
+
+
+    public function barangUsang(Request $request)
+    {
+        $query = BarangUsang::query()
+            ->with(['dicatatOleh', 'detail.barang']); // Load detail
+
+        // 1. Filter Tanggal
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('tanggal_catat', [
+                $request->input('start_date'), 
+                $request->input('end_date')
+            ]);
+        }
+
+        // 2. Search
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('no_catat', 'like', '%' . $request->input('search') . '%')
+                  ->orWhere('no_bukti', 'like', '%' . $request->input('search') . '%');
+            });
+        }
+
+        $data = $query->orderBy('tanggal_catat', 'desc')
+                      ->paginate(20)
+                      ->withQueryString();
+
+        return Inertia::render('Laporan/barangusang', [
+            'laporan' => $data->through(fn($item) => [
+                'id' => $item->id,
+                'tanggal' => Carbon::parse($item->tanggal_catat)->format('d-m-Y'),
+                'no_catat' => $item->no_catat,
+                'no_bukti' => $item->no_bukti ?? '-',
+                'pencatat' => $item->dicatatOleh->name ?? '-',
+                'keterangan' => $item->keterangan,
+                'total_item' => $item->detail->count(),
+                'ringkasan' => $item->detail->take(2)->map(fn($d) => $d->barang->nama_barang)->join(', ') . ($item->detail->count() > 2 ? '...' : ''),
+            ]),
+            'filters' => $request->only(['start_date', 'end_date', 'search']),
+        ]);
+    }
+
+    public function exportBarangUsang(Request $request)
+    {
+        $query = BarangUsang::query()
+            ->with(['dicatatOleh', 'detail.barang.satuan']);
+
+        // LOGIKA SELECT ID
+        if ($request->filled('selected_ids')) {
+            $ids = explode(',', $request->input('selected_ids'));
+            $query->whereIn('id', $ids);
+        } else {
+            // Filter Biasa
+            if ($request->filled('start_date') && $request->filled('end_date')) {
+                $query->whereBetween('tanggal_catat', [
+                    $request->input('start_date'), 
+                    $request->input('end_date')
+                ]);
+            }
+            if ($request->filled('search')) {
+                $query->where('no_catat', 'like', '%' . $request->input('search') . '%');
+            }
+        }
+
+        $data = $query->orderBy('tanggal_catat', 'desc')->get();
+
+        if ($data->isEmpty()) {
+            return back()->with('error', 'Tidak ada data untuk diexport.');
+        }
+
+        // 1. EXPORT EXCEL
+        if ($request->input('type') === 'excel') {
+            return Excel::download(
+                new LaporanBarangUsangExport($data), 
+                'Laporan_Barang_Rusak_' . date('dmY_His') . '.xlsx'
+            );
+        }
+
+        // 2. EXPORT PDF
+        if ($request->input('type') === 'pdf') {
+            $pdf = Pdf::loadView('exports.laporan_barang_usang_pdf', [
+                'data' => $data
+            ])->setPaper('a4', 'portrait');
+
+            return $pdf->download('Laporan_Barang_Rusak_' . date('dmY_His') . '.pdf');
+        }
+
+        return back();
+    }
+
+
+
+
+    public function dataBarang(Request $request)
+    {
+        $query = Barang::query()->with(['satuan', 'kelompokBarang']);
+
+        // 1. Filter Kelompok Barang
+        if ($request->filled('kelompok_id')) {
+            $query->where('kelompok_barang_id', $request->input('kelompok_id'));
+        }
+
+        // 2. Search (Nama / Kode)
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('nama_barang', 'like', '%' . $request->input('search') . '%')
+                  ->orWhere('kode_barang', 'like', '%' . $request->input('search') . '%');
+            });
+        }
+
+        $barangs = $query->orderBy('nama_barang', 'asc')
+                         ->paginate(20)
+                         ->withQueryString();
+
+        return Inertia::render('Laporan/databarang', [
+            'barangs' => $barangs,
+            'kelompok_barangs' => KelompokBarang::all(), // Untuk dropdown filter
+            'filters' => $request->only(['search', 'kelompok_id']),
+        ]);
+    }
+
+    public function exportDataBarang(Request $request)
+    {
+        $query = Barang::query()->with(['satuan', 'kelompokBarang']);
+
+        // LOGIKA SELECT ID (Prioritas)
+        if ($request->filled('selected_ids')) {
+            $ids = explode(',', $request->input('selected_ids'));
+            $query->whereIn('id', $ids);
+        } else {
+            // Filter Biasa
+            if ($request->filled('kelompok_id')) {
+                $query->where('kelompok_barang_id', $request->input('kelompok_id'));
+            }
+            if ($request->filled('search')) {
+                $query->where(function($q) use ($request) {
+                    $q->where('nama_barang', 'like', '%' . $request->input('search') . '%')
+                      ->orWhere('kode_barang', 'like', '%' . $request->input('search') . '%');
+                });
+            }
+        }
+
+        $data = $query->orderBy('kode_barang', 'asc')->get();
+
+        if ($data->isEmpty()) {
+            return back()->with('error', 'Tidak ada data untuk diexport.');
+        }
+
+        // 1. EXPORT EXCEL
+        if ($request->input('type') === 'excel') {
+            return Excel::download(
+                new LaporanDataBarangExport($data), 
+                'Laporan_Data_Barang_' . date('dmY_His') . '.xlsx'
+            );
+        }
+
+        // 2. EXPORT PDF
+        if ($request->input('type') === 'pdf') {
+            $pdf = Pdf::loadView('exports.laporan_data_barang_pdf', [
+                'barangs' => $data,
+                'tanggal_cetak' => Carbon::now()->format('d F Y')
+            ])->setPaper('a4', 'portrait');
+
+            return $pdf->download('Laporan_Data_Barang_' . date('dmY_His') . '.pdf');
         }
 
         return back();

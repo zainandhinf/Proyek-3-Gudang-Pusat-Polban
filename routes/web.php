@@ -109,6 +109,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/barang-usang', [BarangUsangController::class, 'store'])->name('barang-usang.store');
     Route::get('/barang-usang/{barangUsang}/edit', [BarangUsangController::class, 'edit'])->name('barang-usang.edit');
     Route::put('/barang-usang/{barangUsang}', [BarangUsangController::class, 'update'])->name('barang-usang.update');
+    Route::get('/barang-usang/{barangUsang}', [BarangUsangController::class, 'show'])->name('barang-usang.show');
     Route::delete('/barang-usang/{barangUsang}', [BarangUsangController::class, 'destroy'])->name('barang-usang.destroy');
 
 
@@ -124,10 +125,18 @@ Route::middleware('auth')->group(function () {
     // Laporan Routes
     Route::get('/laporan/mutasi', [LaporanController::class, 'mutasi'])->name('laporan.mutasi');
     Route::get('/laporan/mutasi/export', [LaporanController::class, 'exportMutasi'])->name('laporan.mutasi.export');
+
     Route::get('/laporan/permintaan', [LaporanController::class, 'permintaan'])->name('laporan.permintaan');
     Route::get('/laporan/permintaan/export', [LaporanController::class, 'exportPermintaan'])->name('laporan.permintaan.export');
+
     Route::get('/laporan/stock-opname', [LaporanController::class, 'stockOpname'])->name('laporan.stock-opname');
     Route::get('/laporan/stock-opname/export', [LaporanController::class, 'exportStockOpname'])->name('laporan.stock-opname.export');
+
+    Route::get('/laporan/barang-usang', [LaporanController::class, 'barangUsang'])->name('laporan.barang-usang');
+    Route::get('/laporan/barang-usang/export', [LaporanController::class, 'exportBarangUsang'])->name('laporan.barang-usang.export');
+
+    Route::get('/laporan/data-barang', [LaporanController::class, 'dataBarang'])->name('laporan.data-barang');
+    Route::get('/laporan/data-barang/export', [LaporanController::class, 'exportDataBarang'])->name('laporan.data-barang.export');
 });
 
 
