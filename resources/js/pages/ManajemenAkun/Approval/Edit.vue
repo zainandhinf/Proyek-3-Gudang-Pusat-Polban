@@ -4,7 +4,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
     user: Object,
-    units: Array,
+    unitKerjas: Array,
 });
 
 const form = useForm({
@@ -17,7 +17,6 @@ const form = useForm({
 });
 
 const submit = () => {
-    // Route ke approval.update
     form.put(route('approval.update', props.user.id), {
         onFinish: () => form.reset('password', 'password_confirmation'),
     });
@@ -43,20 +42,20 @@ const submit = () => {
                     <form @submit.prevent="submit">
                         <div class="mb-4">
                             <label class="block mb-2 text-sm font-bold text-gray-700">Nama Lengkap</label>
-                            <input v-model="form.name" type="text" class="w-full px-3 py-2 border rounded-lg">
+                            <input v-model="form.name" type="text" class="w-full px-3 py-2 border rounded-lg text-black">
                             <div v-if="form.errors.name" class="text-red-500 text-sm mt-1">{{ form.errors.name }}</div>
                         </div>
 
                         <div class="mb-4">
                             <label class="block mb-2 text-sm font-bold text-gray-700">NIP</label>
-                            <input v-model="form.nip" type="text" class="w-full px-3 py-2 border rounded-lg">
+                            <input v-model="form.nip" type="text" class="w-full px-3 py-2 border rounded-lg text-black">
                             <div v-if="form.errors.nip" class="text-red-500 text-sm mt-1">{{ form.errors.nip }}</div>
                         </div>
 
                         <div class="mb-4">
                             <label class="block mb-2 text-sm font-bold text-gray-700">Unit Kerja</label>
-                            <select v-model="form.unit_kerja_id" class="w-full px-3 py-2 border rounded-lg bg-white">
-                                <option v-for="unit in units" :key="unit.id" :value="unit.id">
+                            <select v-model="form.unit_kerja_id" class="w-full px-3 py-2 border rounded-lg bg-white text-black">
+                                <option v-for="unit in unitKerjas" :key="unit.id" :value="unit.id">
                                     {{ unit.nama_unit }}
                                 </option>
                             </select>
@@ -65,7 +64,7 @@ const submit = () => {
 
                         <div class="mb-4">
                             <label class="block mb-2 text-sm font-bold text-gray-700">Email</label>
-                            <input v-model="form.email" type="email" class="w-full px-3 py-2 border rounded-lg">
+                            <input v-model="form.email" type="email" class="w-full px-3 py-2 border rounded-lg text-black">
                             <div v-if="form.errors.email" class="text-red-500 text-sm mt-1">{{ form.errors.email }}</div>
                         </div>
 
@@ -75,11 +74,11 @@ const submit = () => {
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <input v-model="form.password" type="password" placeholder="Password Baru" class="w-full px-3 py-2 border rounded-lg">
+                                    <input v-model="form.password" type="password" placeholder="Password Baru" class="w-full px-3 py-2 border rounded-lg text-black">
                                     <div v-if="form.errors.password" class="text-red-500 text-sm mt-1">{{ form.errors.password }}</div>
                                 </div>
                                 <div>
-                                    <input v-model="form.password_confirmation" type="password" placeholder="Konfirmasi Password" class="w-full px-3 py-2 border rounded-lg">
+                                    <input v-model="form.password_confirmation" type="password" placeholder="Konfirmasi Password" class="w-full px-3 py-2 border rounded-lg text-black">
                                 </div>
                             </div>
                         </div>

@@ -1,21 +1,38 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, router, usePage } from '@inertiajs/vue3'; // Import router
-import { computed } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import { debounce } from 'lodash';
 
+// Terima Data dari Controller (variable 'approvals' bukan 'pemohons')
 const props = defineProps({
     approvals: Object, 
+    filters: Object // Terima filter search
 });
 
-// 👇 Logika Delete yang tadinya belum ada
+// Setup Search
+const search = ref(props.filters?.search || '');
+
+// Logic Search Otomatis (300ms delay)
+watch(search, debounce((value) => {
+    router.get(route('manajemen-akun.approval.index'), { search: value }, {
+        preserveState: true,
+        replace: true,
+    });
+}, 300));
+
+// Fungsi Hapus
 const deleteUser = (id, name) => {
     if (confirm(`Apakah Anda yakin ingin menghapus akun Approval ${name}?`)) {
-        router.delete(route('approval.destroy', id));
+        router.delete(route('approval.destroy', id), {
+            onSuccess: () => {
+                // Optional: action setelah sukses hapus
+            }
+        });
     }
 };
 
 const page = usePage();
-// Pakai ?. biar tidak error blank screen
 const successMessage = computed(() => page.props.flash?.success);
 </script>
 
@@ -41,11 +58,20 @@ const successMessage = computed(() => page.props.flash?.success);
                     <div class="flex justify-between items-center mb-6">
                         <div>
                             <h3 class="text-lg font-medium text-gray-900">Daftar Akun Approval</h3>
-                            <p class="text-sm text-gray-500">Kelola akun pejabat unit/jurusan (Kepala Unit, Kajur, dll)</p>
+                            <p class="text-sm text-gray-500">Kelola akun approval barang dari berbagai unit kerja</p>
                         </div>
                         <Link :href="route('approval.create')" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2">
                             <span>+ Tambah Akun</span>
                         </Link>
+                    </div>
+
+                    <div class="flex gap-4 mb-4 justify-end">
+                        <input 
+                            v-model="search"
+                            type="text" 
+                            placeholder="Cari nama atau NIP..." 
+                            class="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 w-64"
+                        >
                     </div>
 
                     <div class="overflow-x-auto">
@@ -102,6 +128,7 @@ const successMessage = computed(() => page.props.flash?.success);
                     <div class="mt-4 flex justify-end">
                         <template v-for="(link, key) in approvals.links" :key="key">
                             <Link v-if="link.url" :href="link.url" v-html="link.label" class="px-3 py-1 border rounded mx-1 text-sm" :class="{ 'bg-blue-600 text-white': link.active, 'bg-white text-gray-700 hover:bg-gray-50': !link.active }" />
+                            <span v-else v-html="link.label" class="px-3 py-1 border rounded mx-1 text-sm text-gray-400 bg-gray-100"></span>
                         </template>
                     </div>
 

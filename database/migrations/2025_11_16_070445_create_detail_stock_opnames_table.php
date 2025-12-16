@@ -16,8 +16,9 @@ return new class extends Migration
             $table->foreignId('stock_opname_id')->constrained('stock_opnames')->onDelete('cascade');
             $table->foreignId('barang_id')->constrained('barangs');
             $table->integer('stok_sistem');
-            $table->integer('stok_fisik');
-            $table->integer('selisih');
+            $table->integer('stok_fisik')->nullable();
+            $table->integer('selisih')->nullable();
+            $table->text('keterangan')->nullable();
             // tidak ada timestamps
         });
     }

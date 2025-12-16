@@ -4,32 +4,44 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\UnitKerja;
-use App\Enums\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ApprovalController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $approvals = User::where('role', Role::APPROVAL)
-            ->with('unitKerja')
-            ->paginate(10);
+        $query = User::where('role', 'approval')->with('unitKerja');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('email', 'ilike', "%{$search}%")
+                  ->orWhere('nip', 'ilike', "%{$search}%");
+            });
+        }
+
+        $approvals = $query->paginate(6)->withQueryString();
 
         return Inertia::render('ManajemenAkun/Approval/Index', [
-            'approvals' => $approvals
+            'approvals' => $approvals,
+            'filters' => $request->only(['search'])
         ]);
     }
 
+    // 👇 Tambahkan Create
     public function create()
     {
-        $units = UnitKerja::all();
+        $unitKerjas = UnitKerja::all();
         return Inertia::render('ManajemenAkun/Approval/Create', [
-            'units' => $units
+            'unitKerjas' => $unitKerjas
         ]);
     }
 
+    // 👇 Tambahkan Store
     public function store(Request $request)
     {
         $request->validate([
@@ -46,21 +58,21 @@ class ApprovalController extends Controller
             'nip' => $request->nip,
             'unit_kerja_id' => $request->unit_kerja_id,
             'password' => Hash::make($request->password),
-            'role' => Role::APPROVAL, 
+            'role' => 'approval', // Set otomatis jadi approval
         ]);
 
         return redirect()->route('manajemen-akun.approval.index')
-            ->with('success', 'Akun Approval berhasil dibuat!');
+            ->with('success', 'Akun Approval berhasil ditambahkan!');
     }
 
     public function edit($id)
     {
         $user = User::findOrFail($id);
-        $units = UnitKerja::all();
+        $unitKerjas = UnitKerja::all();
 
         return Inertia::render('ManajemenAkun/Approval/Edit', [
             'user' => $user,
-            'units' => $units
+            'unitKerjas' => $unitKerjas
         ]);
     }
 
@@ -70,8 +82,8 @@ class ApprovalController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,'.$user->id,
-            'nip' => 'required|string|unique:users,nip,'.$user->id,
+            'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+            'nip' => ['required', 'string', Rule::unique('users')->ignore($user->id)],
             'unit_kerja_id' => 'required|exists:unit_kerjas,id',
             'password' => 'nullable|string|min:8|confirmed',
         ]);
@@ -93,13 +105,12 @@ class ApprovalController extends Controller
             ->with('success', 'Data Approval berhasil diperbarui!');
     }
 
-    // 👇 INI YANG TADINYA BELUM ADA
     public function destroy($id)
     {
         $user = User::findOrFail($id);
         $user->delete();
 
         return redirect()->route('manajemen-akun.approval.index')
-            ->with('success', 'Akun Approval berhasil dihapus!');
+            ->with('success', 'Akun berhasil dihapus.');
     }
 }

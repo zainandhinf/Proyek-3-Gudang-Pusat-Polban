@@ -13,16 +13,16 @@ class Barang extends Model
     protected $guarded = [];
 
     // Relasi ke Master
-    public function kategori(): BelongsTo
-    {
-        return $this->belongsTo(Kategori::class);
-    }
-
     public function satuan(): BelongsTo
     {
         return $this->belongsTo(Satuan::class);
     }
-    
+
+    public function kelompokBarang()
+    {
+        return $this->belongsTo(KelompokBarang::class, 'kelompok_barang_id');
+    }
+
     // Relasi ke Transaksi
     public function detailBarangMasuks(): HasMany
     {

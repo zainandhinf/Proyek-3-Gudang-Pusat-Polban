@@ -1,24 +1,37 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { debounce } from 'lodash'; // Pastikan import lodash
 
-// Menerima data 'pemohons' dari Controller
+// Menerima data dari Controller
 const props = defineProps({
     pemohons: Object, 
+    filters: Object // Menerima filter search dari controller
 });
 
-// Fungsi untuk menghapus data
+// Setup Search dengan nilai default dari controller (biar pas refresh ga ilang)
+const search = ref(props.filters?.search || '');
+
+// Logic Search Otomatis (Delay 300ms biar ga berat request ke server)
+watch(search, debounce((value) => {
+    router.get(route('manajemen-akun.pemohon.index'), { search: value }, {
+        preserveState: true, // Biar scroll ga loncat ke atas
+        replace: true,       // Biar history browser ga penuh sampah search
+    });
+}, 300));
+
+// Fungsi Hapus
 const deleteUser = (id, name) => {
     if (confirm(`Apakah Anda yakin ingin menghapus akun ${name}?`)) {
         router.delete(route('pemohon.destroy', id), {
             onSuccess: () => {
+                // Optional: Tambahan logic kalau sukses
             }
         });
     }
 };
 
-// Mengambil flash message success dari session (jika ada)
 const page = usePage();
 const successMessage = computed(() => page.props.flash?.success);
 </script>
@@ -57,13 +70,11 @@ const successMessage = computed(() => page.props.flash?.success);
                     </div>
 
                     <div class="flex gap-4 mb-4 justify-end">
-                        <select class="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
-                            <option>Semua Unit</option>
-                        </select>
                         <input 
+                            v-model="search"
                             type="text" 
-                            placeholder="Cari akun..." 
-                            class="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Cari nama atau NIP..." 
+                            class="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 w-64"
                         >
                     </div>
 
@@ -103,11 +114,12 @@ const successMessage = computed(() => page.props.flash?.success);
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                         <div class="flex justify-center gap-3">
-                                            <button class="text-indigo-600 hover:text-indigo-900" title="Edit">
+                                            <Link :href="route('pemohon.edit', user.id)" class="text-indigo-600 hover:text-indigo-900" title="Edit">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                                                 </svg>
-                                            </button>
+                                            </Link>
+                                            
                                             <button 
                                                 @click="deleteUser(user.id, user.name)" 
                                                 class="text-red-600 hover:text-red-900" 
@@ -123,7 +135,7 @@ const successMessage = computed(() => page.props.flash?.success);
 
                                 <tr v-if="pemohons.data.length === 0">
                                     <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                        Belum ada data pemohon.
+                                        Data tidak ditemukan.
                                     </td>
                                 </tr>
                             </tbody>

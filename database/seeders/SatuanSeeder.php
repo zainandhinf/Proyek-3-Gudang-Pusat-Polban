@@ -14,11 +14,11 @@ class SatuanSeeder extends Seeder
     public function run(): void
     {
         DB::table('satuans')->insert([
-            ['nama_satuan' => 'Rim', 'deskripsi' => 'Satuan untuk kertas', 'created_at' => now(), 'updated_at' => now()],
-            ['nama_satuan' => 'Box', 'deskripsi' => 'Satuan untuk kotak', 'created_at' => now(), 'updated_at' => now()],
-            ['nama_satuan' => 'Pcs', 'deskripsi' => 'Satuan untuk bijian', 'created_at' => now(), 'updated_at' => now()],
-            ['nama_satuan' => 'Botol', 'deskripsi' => 'Satuan untuk cairan', 'created_at' => now(), 'updated_at' => now()],
-            ['nama_satuan' => 'Unit', 'deskripsi' => 'Satuan untuk barang tunggal', 'created_at' => now(), 'updated_at' => now()],
+            ['nama_satuan' => 'Rim', 'keterangan' => 'Satuan untuk kertas', 'created_at' => now(), 'updated_at' => now()],
+            ['nama_satuan' => 'Box', 'keterangan' => 'Satuan untuk kotak', 'created_at' => now(), 'updated_at' => now()],
+            ['nama_satuan' => 'Pcs', 'keterangan' => 'Satuan untuk bijian', 'created_at' => now(), 'updated_at' => now()],
+            ['nama_satuan' => 'Botol', 'keterangan' => 'Satuan untuk cairan', 'created_at' => now(), 'updated_at' => now()],
+            ['nama_satuan' => 'Unit', 'keterangan' => 'Satuan untuk barang tunggal', 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 }

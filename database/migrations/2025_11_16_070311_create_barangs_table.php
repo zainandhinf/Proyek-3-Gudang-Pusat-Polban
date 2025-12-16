@@ -16,8 +16,11 @@ return new class extends Migration
             $table->string('kode_barang')->unique();
             $table->string('nama_barang');
             $table->integer('stok_saat_ini')->default(0);
-            $table->foreignId('kategori_id')->constrained('kategoris');
+            $table->bigInteger('harga')->default(0);
+            $table->string('foto')->nullable();
+            $table->foreignId('kelompok_barang_id')->constrained('kelompok_barangs');
             $table->foreignId('satuan_id')->constrained('satuans');
+            $table->text('deskripsi')->constrained('satuans');
             $table->timestamps();
         });
     }

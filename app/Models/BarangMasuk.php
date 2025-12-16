@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Carbon\Carbon;
+
 
 class BarangMasuk extends Model
 {
@@ -24,5 +26,10 @@ class BarangMasuk extends Model
     public function detailBarangMasuks(): HasMany
     {
         return $this->hasMany(DetailBarangMasuk::class);
+    }
+    
+    public function getTanggalMasukFormattedAttribute()
+    {
+        return Carbon::parse($this->tanggal_masuk)->format('d-m-Y');
     }
 }

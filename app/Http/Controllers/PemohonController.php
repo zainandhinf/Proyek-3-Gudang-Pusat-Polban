@@ -4,31 +4,43 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\UnitKerja;
-use App\Enums\Role; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule; // Tambahkan ini buat validasi update
 use Inertia\Inertia;
 
 class PemohonController extends Controller
 {
-    public function index()
+    public function index(Request $request) 
     {
-        // Menggunakan Enum Role::PEMOHON agar lebih aman
-        // Pastikan di User.php sudah ada cast ke Role::class
-        $pemohons = User::where('role', Role::PEMOHON) 
-            ->with('unitKerja')
-            ->paginate(10);
+        $query = User::where('role', 'pemohon')->with('unitKerja');
+
+        // Logic Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%") // ilike untuk Postgres
+                  ->orWhere('email', 'ilike', "%{$search}%")
+                  ->orWhere('nip', 'ilike', "%{$search}%");
+            });
+        }
+
+        $pemohons = $query->paginate(6)->withQueryString();
 
         return Inertia::render('ManajemenAkun/Pemohon/Index', [
-            'pemohons' => $pemohons
+            'pemohons' => $pemohons,
+            'filters' => $request->only(['search'])
         ]);
     }
 
+    // 👇 INI YANG TADI HILANG (Fungsi untuk menampilkan Form Tambah)
     public function create()
     {
-        $units = UnitKerja::all(); 
+        // Ambil data Unit Kerja buat Dropdown
+        $unitKerjas = UnitKerja::all();
+
         return Inertia::render('ManajemenAkun/Pemohon/Create', [
-            'units' => $units
+            'unitKerjas' => $unitKerjas
         ]);
     }
 
@@ -48,10 +60,8 @@ class PemohonController extends Controller
             'nip' => $request->nip,
             'unit_kerja_id' => $request->unit_kerja_id,
             'password' => Hash::make($request->password),
-            // Menggunakan Enum langsung (Laravel akan otomatis ambil valuenya karena sudah di-cast di Model)
-            'role' => Role::PEMOHON, 
+            'role' => 'pemohon', // Kita set string manual biar aman
         ]);
-        
 
         return redirect()->route('manajemen-akun.pemohon.index')
             ->with('success', 'Akun Pemohon berhasil dibuat!');
@@ -60,11 +70,11 @@ class PemohonController extends Controller
     public function edit($id)
     {
         $user = User::findOrFail($id);
-        $units = UnitKerja::all();
+        $unitKerjas = UnitKerja::all(); // Variabel disamakan jadi unitKerjas
 
         return Inertia::render('ManajemenAkun/Pemohon/Edit', [
             'user' => $user,
-            'units' => $units
+            'unitKerjas' => $unitKerjas
         ]);
     }
 
@@ -74,11 +84,11 @@ class PemohonController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            // Validasi unik kecuali punya user ini sendiri
-            'email' => 'required|email|unique:users,email,'.$user->id,
-            'nip' => 'required|string|unique:users,nip,'.$user->id,
+            // Pake Rule::unique biar bisa ignore ID sendiri
+            'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+            'nip' => ['required', 'string', Rule::unique('users')->ignore($user->id)],
             'unit_kerja_id' => 'required|exists:unit_kerjas,id',
-            'password' => 'nullable|string|min:8|confirmed', // Password opsional saat edit
+            'password' => 'nullable|string|min:8|confirmed',
         ]);
 
         $data = [
@@ -88,7 +98,6 @@ class PemohonController extends Controller
             'unit_kerja_id' => $request->unit_kerja_id,
         ];
 
-        // Hanya update password jika diisi
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);
         }
@@ -101,13 +110,9 @@ class PemohonController extends Controller
     
     public function destroy($id)
     {
-        // Cari user berdasarkan ID
         $user = User::findOrFail($id);
-        
-        // Hapus user
         $user->delete();
 
-        // Kembali ke halaman index
         return redirect()->route('manajemen-akun.pemohon.index')
             ->with('success', 'Akun berhasil dihapus!');
     }

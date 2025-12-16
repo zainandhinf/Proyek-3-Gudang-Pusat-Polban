@@ -2,15 +2,14 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
-// Menerima data 'units' (Daftar Jurusan/Unit) yang dikirim dari Controller
 defineProps({
-    units: Array,
+    unitKerjas: Array,
 });
 
 const form = useForm({
     name: '',
     nip: '',
-    unit_kerja_id: '', // Menyimpan ID Unit yang dipilih
+    unit_kerja_id: '', 
     email: '',
     password: '',
     password_confirmation: '',
@@ -46,7 +45,7 @@ const submit = () => {
                                 v-model="form.name" 
                                 type="text" 
                                 placeholder="Contoh: Budi Santoso, S.Kom"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                             >
                             <div v-if="form.errors.name" class="text-red-500 text-sm mt-1">{{ form.errors.name }}</div>
                         </div>
@@ -57,7 +56,7 @@ const submit = () => {
                                 v-model="form.nip" 
                                 type="text" 
                                 placeholder="Masukkan NIP (Wajib Unik)"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                             >
                             <div v-if="form.errors.nip" class="text-red-500 text-sm mt-1">{{ form.errors.nip }}</div>
                         </div>
@@ -66,10 +65,10 @@ const submit = () => {
                             <label class="block mb-2 text-sm font-bold text-gray-700">Unit / Jurusan</label>
                             <select 
                                 v-model="form.unit_kerja_id" 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
                             >
                                 <option value="" disabled>-- Pilih Unit Kerja --</option>
-                                <option v-for="unit in units" :key="unit.id" :value="unit.id">
+                                <option v-for="unit in unitKerjas" :key="unit.id" :value="unit.id">
                                     {{ unit.nama_unit }}
                                 </option>
                             </select>
@@ -82,7 +81,7 @@ const submit = () => {
                                 v-model="form.email" 
                                 type="email" 
                                 placeholder="email@polban.ac.id"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                             >
                             <div v-if="form.errors.email" class="text-red-500 text-sm mt-1">{{ form.errors.email }}</div>
                         </div>
@@ -93,7 +92,7 @@ const submit = () => {
                                 <input 
                                     v-model="form.password" 
                                     type="password" 
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                                 >
                                 <div v-if="form.errors.password" class="text-red-500 text-sm mt-1">{{ form.errors.password }}</div>
                             </div>
@@ -102,7 +101,7 @@ const submit = () => {
                                 <input 
                                     v-model="form.password_confirmation" 
                                     type="password" 
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                                 >
                             </div>
                         </div>
