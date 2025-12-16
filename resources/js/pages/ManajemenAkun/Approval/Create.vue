@@ -1,6 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm, Link } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Save, ArrowLeft } from 'lucide-vue-next';
 
 defineProps({
     unitKerjas: Array,
@@ -9,7 +10,7 @@ defineProps({
 const form = useForm({
     name: '',
     nip: '',
-    unit_kerja_id: '',
+    unit_kerja_id: '', 
     email: '',
     password: '',
     password_confirmation: '',
@@ -26,104 +27,105 @@ const submit = () => {
     <Head title="Tambah Akun Approval" />
 
     <AuthenticatedLayout>
-        <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Tambah Akun Approval
-            </h2>
-        </template>
+        <div class="py-8 px-4 md:px-6 lg:px-8 max-w-4xl mx-auto">
+            
+            <div class="mb-6">
+                <Link :href="route('manajemen-akun.approval.index')" class="flex items-center text-gray-500 hover:text-gray-700 transition mb-2">
+                    <ArrowLeft class="w-4 h-4 mr-1" /> Kembali
+                </Link>
+                <h1 class="text-2xl font-bold text-gray-900">Tambah Akun Approval</h1>
+            </div>
 
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    
-                    <h2 class="text-2xl font-bold mb-6 text-gray-800">Formulir Tambah Approval</h2>
-
+            <div class="bg-white overflow-hidden shadow-sm rounded-xl border border-gray-200">
+                <div class="p-6">
                     <form @submit.prevent="submit">
-                        <div class="mb-4">
-                            <label class="block mb-2 text-sm font-bold text-gray-700">Nama Lengkap</label>
-                            <input 
-                                v-model="form.name" 
-                                type="text" 
-                                placeholder="Contoh: Dr. Asep, M.T."
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                            >
-                            <div v-if="form.errors.name" class="text-red-500 text-sm mt-1">{{ form.errors.name }}</div>
-                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            
+                            <div class="col-span-2 md:col-span-1">
+                                <label class="block mb-1 text-sm font-medium text-gray-700">Nama Lengkap</label>
+                                <input 
+                                    v-model="form.name" 
+                                    type="text" 
+                                    placeholder="Contoh: Dr. Asep, M.T."
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 text-sm"
+                                >
+                                <div v-if="form.errors.name" class="text-red-500 text-xs mt-1">{{ form.errors.name }}</div>
+                            </div>
 
-                        <div class="mb-4">
-                            <label class="block mb-2 text-sm font-bold text-gray-700">NIP / ID Pegawai</label>
-                            <input 
-                                v-model="form.nip" 
-                                type="text" 
-                                placeholder="Masukkan NIP (Wajib Unik)"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                            >
-                            <div v-if="form.errors.nip" class="text-red-500 text-sm mt-1">{{ form.errors.nip }}</div>
-                        </div>
+                            <div class="col-span-2 md:col-span-1">
+                                <label class="block mb-1 text-sm font-medium text-gray-700">NIP / ID Pegawai</label>
+                                <input 
+                                    v-model="form.nip" 
+                                    type="text" 
+                                    placeholder="Masukkan NIP"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 text-sm"
+                                >
+                                <div v-if="form.errors.nip" class="text-red-500 text-xs mt-1">{{ form.errors.nip }}</div>
+                            </div>
 
-                        <div class="mb-4">
-                            <label class="block mb-2 text-sm font-bold text-gray-700">Unit / Jurusan</label>
-                            <select 
-                                v-model="form.unit_kerja_id" 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
-                            >
-                                <option value="" disabled>-- Pilih Unit Kerja --</option>
-                                <option v-for="unit in unitKerjas" :key="unit.id" :value="unit.id">
-                                    {{ unit.nama_unit }}
-                                </option>
-                            </select>
-                            <div v-if="form.errors.unit_kerja_id" class="text-red-500 text-sm mt-1">{{ form.errors.unit_kerja_id }}</div>
-                        </div>
+                            <div class="col-span-2 md:col-span-1">
+                                <label class="block mb-1 text-sm font-medium text-gray-700">Unit / Jurusan</label>
+                                <select 
+                                    v-model="form.unit_kerja_id" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 text-sm bg-white"
+                                >
+                                    <option value="" disabled>-- Pilih Unit Kerja --</option>
+                                    <option v-for="unit in unitKerjas" :key="unit.id" :value="unit.id">
+                                        {{ unit.nama_unit }}
+                                    </option>
+                                </select>
+                                <div v-if="form.errors.unit_kerja_id" class="text-red-500 text-xs mt-1">{{ form.errors.unit_kerja_id }}</div>
+                            </div>
 
-                        <div class="mb-4">
-                            <label class="block mb-2 text-sm font-bold text-gray-700">Email</label>
-                            <input 
-                                v-model="form.email" 
-                                type="email" 
-                                placeholder="email@polban.ac.id"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                            >
-                            <div v-if="form.errors.email" class="text-red-500 text-sm mt-1">{{ form.errors.email }}</div>
-                        </div>
+                            <div class="col-span-2 md:col-span-1">
+                                <label class="block mb-1 text-sm font-medium text-gray-700">Email</label>
+                                <input 
+                                    v-model="form.email" 
+                                    type="email" 
+                                    placeholder="email@polban.ac.id"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 text-sm"
+                                >
+                                <div v-if="form.errors.email" class="text-red-500 text-xs mt-1">{{ form.errors.email }}</div>
+                            </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                            <div>
-                                <label class="block mb-2 text-sm font-bold text-gray-700">Password</label>
+                            <div class="col-span-2 md:col-span-1">
+                                <label class="block mb-1 text-sm font-medium text-gray-700">Password</label>
                                 <input 
                                     v-model="form.password" 
                                     type="password" 
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 text-sm"
                                 >
-                                <div v-if="form.errors.password" class="text-red-500 text-sm mt-1">{{ form.errors.password }}</div>
+                                <div v-if="form.errors.password" class="text-red-500 text-xs mt-1">{{ form.errors.password }}</div>
                             </div>
-                            <div>
-                                <label class="block mb-2 text-sm font-bold text-gray-700">Konfirmasi Password</label>
+
+                            <div class="col-span-2 md:col-span-1">
+                                <label class="block mb-1 text-sm font-medium text-gray-700">Konfirmasi Password</label>
                                 <input 
                                     v-model="form.password_confirmation" 
                                     type="password" 
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 text-sm"
                                 >
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-end gap-3 pt-4 border-t">
+                        <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-100">
                             <Link 
                                 :href="route('manajemen-akun.approval.index')" 
-                                class="text-gray-600 hover:text-gray-900 font-medium text-sm px-4 py-2"
+                                class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm font-medium hover:bg-gray-50 transition"
                             >
                                 Batal
                             </Link>
                             
                             <button 
                                 type="submit" 
-                                class="bg-blue-600 text-white font-bold px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
+                                class="flex items-center px-6 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition disabled:opacity-50"
                                 :disabled="form.processing"
                             >
+                                <Save class="w-4 h-4 mr-2" />
                                 {{ form.processing ? 'Menyimpan...' : 'Simpan Akun' }}
                             </button>
                         </div>
                     </form>
-
                 </div>
             </div>
         </div>

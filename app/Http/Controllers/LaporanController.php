@@ -14,6 +14,8 @@ use App\Exports\LaporanBarangUsangExport;
 use App\Models\Barang;
 use App\Models\KelompokBarang;
 use App\Exports\LaporanDataBarangExport;
+use App\Exports\KartuStokExport;
+use App\Models\DetailBarangUsang;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -503,82 +505,290 @@ class LaporanController extends Controller
 
 
     
+    // public function kartuStok(Request $request)
+    // {
+    //     $year = $request->input('year', date('Y'));
+    //     $search = $request->input('search');
+
+    //     // 1. Ambil Data Master Barang
+    //     $query = Barang::query()->with(['satuan']);
+
+    //     if ($search) {
+    //         $query->where('nama_barang', 'like', "%{$search}%")
+    //               ->orWhere('kode_barang', 'like', "%{$search}%");
+    //     }
+
+    //     // Paginasi agar performa tetap ringan meski data banyak
+    //     $barangs = $query->orderBy('nama_barang')->paginate(15)->withQueryString();
+
+    //     // 2. Logika Automatisasi (Transformasi Data)
+    //     // Kita hitung pergerakan stok untuk setiap barang di halaman ini
+    //     $kartuStok = $barangs->through(function ($barang) use ($year) {
+            
+    //         // A. Hitung Saldo Awal (Akumulasi transaksi sebelum tahun ini)
+    //         $saldoAwal = DB::table('transaksi_barangs')
+    //             ->where('barang_id', $barang->id)
+    //             ->where('tanggal', '<', $year . '-01-01')
+    //             ->selectRaw("SUM(CASE WHEN jenis = 'masuk' THEN jumlah ELSE -jumlah END) as total")
+    //             ->value('total') ?? 0;
+
+    //         // B. Ambil Transaksi Tahun Ini (Group per Bulan)
+    //         // Menggunakan query agregasi agar cepat
+    //         $transaksiTahunIni = DB::table('transaksi_barangs')
+    //             ->where('barang_id', $barang->id)
+    //             ->whereYear('tanggal', $year)
+    //             ->select(
+    //                 // Syntax ini kompatibel dengan MySQL & PostgreSQL
+    //                 DB::raw('EXTRACT(MONTH FROM tanggal) as bulan'),
+    //                 'jenis',
+    //                 DB::raw('SUM(jumlah) as total')
+    //             )
+    //             ->groupBy('bulan', 'jenis')
+    //             ->get();
+
+    //         // C. Siapkan Array Kosong untuk 12 Bulan
+    //         $mutasi = array_fill(1, 12, 0); // Index 1=Jan, 12=Des
+    //         $totalMutasiTahunIni = 0;
+
+    //         // D. Isi Array dengan Data Transaksi
+    //         foreach ($transaksiTahunIni as $t) {
+    //             $bulan = (int)$t->bulan;
+    //             if ($t->jenis === 'masuk') {
+    //                 $mutasi[$bulan] += $t->total; // Tambah
+    //                 $totalMutasiTahunIni += $t->total;
+    //             } else {
+    //                 $mutasi[$bulan] -= $t->total; // Kurang
+    //                 $totalMutasiTahunIni -= $t->total;
+    //             }
+    //         }
+
+    //         // E. Hitung Saldo Akhir
+    //         $saldoAkhir = $saldoAwal + $totalMutasiTahunIni;
+
+    //         return [
+    //             'id' => $barang->id,
+    //             'kode_barang' => $barang->kode_barang,
+    //             'nama_barang' => $barang->nama_barang,
+    //             'satuan' => $barang->satuan->nama_satuan ?? '-',
+    //             'saldo_awal' => $saldoAwal,
+    //             'mutasi' => $mutasi, // Array [1=>0, 2=>5, 3=>-2, ...]
+    //             'saldo_akhir' => $saldoAkhir,
+    //             'keterangan' => '' // Bisa diisi logic tambahan jika perlu
+    //         ];
+    //     });
+
+    //     return Inertia::render('Laporan/KartuStok/index', [
+    //         'kartuStok' => $kartuStok,
+    //         'filters' => ['search' => $search, 'year' => $year],
+    //         'years' => range(date('Y'), 2020), // Dropdown tahun dari sekarang sampai 2020
+    //     ]);
+    // }
+
+    // public function kartuStok(Request $request)
+    // {
+    //     $year = $request->input('year', date('Y'));
+    //     $search = $request->input('search');
+
+    //     // 1. Ambil Barang
+    //     $query = Barang::query()->with(['satuan', 'kelompokBarang']);
+
+    //     if ($search) {
+    //         $query->where('nama_barang', 'like', "%{$search}%")
+    //               ->orWhere('kode_barang', 'like', "%{$search}%");
+    //     }
+
+    //     $barangs = $query->orderBy('kode_barang')->paginate(20)->withQueryString();
+
+    //     // 2. Transformasi Data (Hitung Mutasi Per Bulan)
+    //     $kartuStok = $barangs->through(function ($barang) use ($year) {
+            
+    //         // A. Hitung Saldo Awal (Total transaksi SEBELUM tahun ini)
+    //         // Logic: Total Masuk - Total Keluar di tahun-tahun sebelumnya
+    //         $saldoAwalMasuk = DetailMutasiBarang::where('barang_id', $barang->id)
+    //             ->whereHas('mutasi', fn($q) => $q->whereYear('tanggal_mutasi', '<', $year)->where('jenis_mutasi', 'masuk'))
+    //             ->sum('jumlah');
+            
+    //         $saldoAwalKeluar = DetailMutasiBarang::where('barang_id', $barang->id)
+    //             ->whereHas('mutasi', fn($q) => $q->whereYear('tanggal_mutasi', '<', $year)->where('jenis_mutasi', 'keluar'))
+    //             ->sum('jumlah');
+
+    //         // Tambahkan juga logika Barang Usang (Keluar) jika perlu
+    //         // ...
+
+    //         $saldoAwal = $saldoAwalMasuk - $saldoAwalKeluar;
+
+    //         // B. Ambil Transaksi Per Bulan di Tahun Terpilih
+    //         $transaksi = DetailMutasiBarang::select(
+    //                 // PERBAIKAN DI SINI: Gunakan EXTRACT untuk Postgres
+    //                 DB::raw('EXTRACT(MONTH FROM mutasi_barangs.tanggal_mutasi) as bulan'),
+    //                 'mutasi_barangs.jenis_mutasi',
+    //                 DB::raw('SUM(detail_mutasi_barangs.jumlah) as total')
+    //             )
+    //             ->join('mutasi_barangs', 'detail_mutasi_barangs.mutasi_barang_id', '=', 'mutasi_barangs.id')
+    //             ->where('detail_mutasi_barangs.barang_id', $barang->id)
+    //             ->whereYear('mutasi_barangs.tanggal_mutasi', $year)
+    //             ->groupBy('bulan', 'jenis_mutasi')
+    //             ->get();
+
+    //         // C. Mapping ke Array 12 Bulan
+    //         $mutasiBulanan = array_fill(1, 12, 0);
+            
+    //         foreach ($transaksi as $t) {
+    //             // Pastikan bulan dicasting ke integer agar bisa jadi index array
+    //             $bulan = (int) $t->bulan; 
+
+    //             if ($t->jenis_mutasi === 'masuk') {
+    //                 $mutasiBulanan[$bulan] += $t->total;
+    //             } else {
+    //                 $mutasiBulanan[$bulan] -= $t->total;
+    //             }
+    //         }
+
+    //         // D. Hitung Total Pemakaian (Total Barang Keluar Tahun Ini)
+    //         $totalPemakaian = $transaksi->where('jenis_mutasi', 'keluar')->sum('total');
+
+    //         // E. Saldo Akhir (Berdasarkan perhitungan, bukan stok saat ini di master)
+    //         // Agar ketahuan kalau ada selisih
+    //         $saldoBerjalan = $saldoAwal + array_sum($mutasiBulanan);
+
+    //         return [
+    //             'id' => $barang->id,
+    //             'kode_barang' => $barang->kode_barang,
+    //             'nama_barang' => $barang->nama_barang,
+    //             'satuan' => $barang->satuan->nama_satuan ?? '-',
+    //             'saldo_awal' => $saldoAwal,
+    //             'mutasi' => $mutasiBulanan, // Array index 1-12
+    //             'saldo_akhir' => $saldoBerjalan, 
+    //             'total_pemakaian' => $totalPemakaian,
+    //             'real_stock' => $barang->stok_saat_ini // Untuk pembanding
+    //         ];
+    //     });
+
+    //     return Inertia::render('Laporan/KartuStok/index', [
+    //         'kartuStok' => $kartuStok,
+    //         'filters' => ['search' => $search, 'year' => $year],
+    //         'years' => range(date('Y'), date('Y') - 5), // Dropdown tahun
+    //     ]);
+    // }
+
     public function kartuStok(Request $request)
     {
         $year = $request->input('year', date('Y'));
         $search = $request->input('search');
 
-        // 1. Ambil Data Master Barang
-        $query = Barang::query()->with(['satuan']);
+        // 1. Ambil Barang
+        $query = Barang::query()->with(['satuan', 'kelompokBarang']);
 
         if ($search) {
             $query->where('nama_barang', 'like', "%{$search}%")
                   ->orWhere('kode_barang', 'like', "%{$search}%");
         }
 
-        // Paginasi agar performa tetap ringan meski data banyak
-        $barangs = $query->orderBy('nama_barang')->paginate(15)->withQueryString();
+        $barangs = $query->orderBy('kode_barang')->paginate(20)->withQueryString();
 
-        // 2. Logika Automatisasi (Transformasi Data)
-        // Kita hitung pergerakan stok untuk setiap barang di halaman ini
+        // 2. Transformasi Data (METODE MUNDUR / BACKWARDS CALCULATION)
         $kartuStok = $barangs->through(function ($barang) use ($year) {
             
-            // A. Hitung Saldo Awal (Akumulasi transaksi sebelum tahun ini)
-            $saldoAwal = DB::table('transaksi_barangs')
-                ->where('barang_id', $barang->id)
-                ->where('tanggal', '<', $year . '-01-01')
-                ->selectRaw("SUM(CASE WHEN jenis = 'masuk' THEN jumlah ELSE -jumlah END) as total")
-                ->value('total') ?? 0;
+            // --- A. Hitung Pergerakan Stok "Masa Depan" (Setelah Tahun Ini) ---
+            // Tujuannya: Mengembalikan stok saat ini ke posisi Akhir Tahun yang dipilih
+            
+            // 1. Mutasi Masuk (Masa Depan) -> Harus DIKURANGI dari stok saat ini
+            $futureMasuk = DetailMutasiBarang::where('barang_id', $barang->id)
+                ->whereHas('mutasi', fn($q) => $q->whereYear('tanggal_mutasi', '>', $year))
+                ->sum('jumlah');
 
-            // B. Ambil Transaksi Tahun Ini (Group per Bulan)
-            // Menggunakan query agregasi agar cepat
-            $transaksiTahunIni = DB::table('transaksi_barangs')
-                ->where('barang_id', $barang->id)
-                ->whereYear('tanggal', $year)
-                ->select(
-                    // Syntax ini kompatibel dengan MySQL & PostgreSQL
-                    DB::raw('EXTRACT(MONTH FROM tanggal) as bulan'),
-                    'jenis',
-                    DB::raw('SUM(jumlah) as total')
+            // 2. Mutasi Keluar (Masa Depan) -> Harus DITAMBAH ke stok saat ini
+            $futureKeluar = DetailMutasiBarang::where('barang_id', $barang->id)
+                ->whereHas('mutasi', fn($q) => $q->whereYear('tanggal_mutasi', '>', $year)->where('jenis_mutasi', 'keluar'))
+                ->sum('jumlah');
+
+            // 3. Barang Usang (Masa Depan) -> Harus DITAMBAH ke stok saat ini
+            $futureRusak = DetailBarangUsang::where('barang_id', $barang->id)
+                ->whereHas('barangUsang', fn($q) => $q->whereYear('tanggal_catat', '>', $year))
+                ->sum('jumlah');
+
+            // Hitung Saldo Akhir Tahun Terpilih
+            // Rumus: Stok Sekarang - Masuk Future + Keluar Future + Rusak Future
+            $saldoAkhirTahun = $barang->stok_saat_ini - $futureMasuk + $futureKeluar + $futureRusak;
+
+
+            // --- B. Hitung Transaksi Selama Tahun Terpilih (Per Bulan) ---
+            
+            // 1. Mutasi (Masuk & Keluar)
+            $transaksiMutasi = DetailMutasiBarang::select(
+                    DB::raw('EXTRACT(MONTH FROM mutasi_barangs.tanggal_mutasi) as bulan'),
+                    'mutasi_barangs.jenis_mutasi',
+                    DB::raw('SUM(detail_mutasi_barangs.jumlah) as total')
                 )
-                ->groupBy('bulan', 'jenis')
+                ->join('mutasi_barangs', 'detail_mutasi_barangs.mutasi_barang_id', '=', 'mutasi_barangs.id')
+                ->where('detail_mutasi_barangs.barang_id', $barang->id)
+                ->whereYear('mutasi_barangs.tanggal_mutasi', $year)
+                ->groupBy('bulan', 'jenis_mutasi')
                 ->get();
 
-            // C. Siapkan Array Kosong untuk 12 Bulan
-            $mutasi = array_fill(1, 12, 0); // Index 1=Jan, 12=Des
-            $totalMutasiTahunIni = 0;
+            // 2. Barang Usang (Selalu Keluar)
+            $transaksiRusak = DetailBarangUsang::select(
+                    DB::raw('EXTRACT(MONTH FROM barang_usangs.tanggal_catat) as bulan'),
+                    DB::raw('SUM(detail_barang_usangs.jumlah) as total')
+                )
+                ->join('barang_usangs', 'detail_barang_usangs.barang_usang_id', '=', 'barang_usangs.id')
+                ->where('detail_barang_usangs.barang_id', $barang->id)
+                ->whereYear('barang_usangs.tanggal_catat', $year)
+                ->groupBy('bulan')
+                ->get();
 
-            // D. Isi Array dengan Data Transaksi
-            foreach ($transaksiTahunIni as $t) {
-                $bulan = (int)$t->bulan;
-                if ($t->jenis === 'masuk') {
-                    $mutasi[$bulan] += $t->total; // Tambah
-                    $totalMutasiTahunIni += $t->total;
+            // --- C. Mapping ke Array 12 Bulan ---
+            $mutasiBulanan = array_fill(1, 12, 0);
+            $totalMasukTahunIni = 0;
+            $totalKeluarTahunIni = 0; // Termasuk pemakaian & rusak
+
+            // Proses Mutasi
+            foreach ($transaksiMutasi as $t) {
+                $bulan = (int) $t->bulan; 
+                if ($t->jenis_mutasi === 'masuk') {
+                    $mutasiBulanan[$bulan] += $t->total;
+                    $totalMasukTahunIni += $t->total;
                 } else {
-                    $mutasi[$bulan] -= $t->total; // Kurang
-                    $totalMutasiTahunIni -= $t->total;
+                    $mutasiBulanan[$bulan] -= $t->total;
+                    $totalKeluarTahunIni += $t->total;
                 }
             }
 
-            // E. Hitung Saldo Akhir
-            $saldoAkhir = $saldoAwal + $totalMutasiTahunIni;
+            // Proses Barang Rusak (Dianggap Keluar)
+            foreach ($transaksiRusak as $r) {
+                $bulan = (int) $r->bulan;
+                $mutasiBulanan[$bulan] -= $r->total; // Kurangi stok
+                $totalKeluarTahunIni += $r->total;
+            }
+
+            // --- D. Hitung Saldo Awal Tahun ---
+            // Rumus: Saldo Akhir - Total Masuk + Total Keluar
+            $saldoAwal = $saldoAkhirTahun - $totalMasukTahunIni + $totalKeluarTahunIni;
 
             return [
                 'id' => $barang->id,
                 'kode_barang' => $barang->kode_barang,
                 'nama_barang' => $barang->nama_barang,
                 'satuan' => $barang->satuan->nama_satuan ?? '-',
-                'saldo_awal' => $saldoAwal,
-                'mutasi' => $mutasi, // Array [1=>0, 2=>5, 3=>-2, ...]
-                'saldo_akhir' => $saldoAkhir,
-                'keterangan' => '' // Bisa diisi logic tambahan jika perlu
+                'saldo_awal' => $saldoAwal, // Sekarang ini hasil kalkulasi mundur
+                'mutasi' => $mutasiBulanan, 
+                'saldo_akhir' => $saldoAkhirTahun, 
+                'total_pemakaian' => $totalKeluarTahunIni,
+                'real_stock' => $barang->stok_saat_ini // Sekedar info debug
             ];
         });
 
         return Inertia::render('Laporan/KartuStok/index', [
             'kartuStok' => $kartuStok,
             'filters' => ['search' => $search, 'year' => $year],
-            'years' => range(date('Y'), 2020), // Dropdown tahun dari sekarang sampai 2020
+            'years' => range(date('Y'), date('Y') - 5),
         ]);
+    }
+
+    public function exportKartuStok(Request $request)
+    {
+        // Logika export mirip dengan LaporanDataBarangExport
+        // Panggil class export baru
+        return Excel::download(new KartuStokExport($request->year), 'Kartu_Stok_'.$request->year.'.xlsx');
     }
 }

@@ -159,6 +159,11 @@ const rejectRequest = (id) => {
 
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                     <div class="flex justify-center items-center gap-2">
+                                        <Link
+                                            :href="route('permintaan.detail', item.id)"
+                                            class="text-cyan-600 font-medium hover:text-cyan-800"
+                                            ><Eye class="w-4 h-4" /></Link>
+
                                         <button 
                                             @click="openPreview(item)" 
                                             class="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"

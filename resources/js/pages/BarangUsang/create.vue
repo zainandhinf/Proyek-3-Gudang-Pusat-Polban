@@ -51,10 +51,12 @@ function onBarangSelect(index) {
 
   if (!barang) {
     item.stok = 0;
+    item.satuan = "";
     return;
   }
   // Ambil stok untuk validasi/info saja
   item.stok = barang.stok_saat_ini ?? 0;
+  item.satuan = barang.satuan?.nama_satuan || '-';
 }
 
 // -------------------------------
@@ -176,15 +178,22 @@ function simpan() {
                     </select>
                   </td>
 
-                  <td class="px-4 py-3">
+                  <td class="px-3 py-2">
                     <input
-                      type="number"
-                      v-model.number="item.jumlah"
-                      min="1"
-                      class="w-full p-2 border border-gray-300 rounded-md text-sm text-center focus:ring-teal-500 focus:border-teal-500"
-                      required
+                        type="number"
+                        min="1"
+                        v-model="item.jumlah"
+                        class="w-full p-2 border rounded-md text-sm transition focus:ring-2 focus:ring-teal-500 outline-none"
+                        :class="{ 'border-red-500 bg-red-50': item.jumlah > item.stok }"
+                        placeholder="0"
                     />
-                  </td>
+                    <div v-if="item.jumlah > item.stok" class="text-[10px] text-red-600 mt-1 font-bold">
+                        Stok Maks: {{ item.stok }}
+                    </div>
+                    <div v-if="form.errors[`items.${index}.jumlah`]" class="text-xs text-red-500 mt-1">
+                        {{ form.errors[`items.${index}.jumlah`] }}
+                    </div>
+                </td>
 
                   <td class="px-4 py-3 text-center text-sm text-gray-600 bg-gray-50">
                     {{ item.stok }}

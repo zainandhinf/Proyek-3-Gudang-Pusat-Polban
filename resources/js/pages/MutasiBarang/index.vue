@@ -241,40 +241,70 @@ const submitImport = () => {
             </div>
         </div>
 
-        <div v-if="showImportModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div v-if="showImportModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 transition-opacity">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+                
                 <div class="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
                     <h3 class="font-bold text-gray-800">Import Mutasi Barang</h3>
-                    <button @click="showImportModal = false" class="text-gray-400 hover:text-gray-600">
+                    <button @click="showImportModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full p-1 transition">
                         <X class="w-5 h-5" />
                     </button>
                 </div>
                 
                 <div class="p-6">
-                    <div class="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4 text-xs text-blue-700">
-                        <strong>Format Wajib (Excel):</strong><br>
-                        Kolom A: Tanggal (dd-mm-yyyy)<br>
-                        Kolom B: Jenis (masuk/keluar)<br>
-                        Kolom C: No Bukti (Grouping)<br>
-                        Kolom D: Keterangan<br>
-                        Kolom E: Kode Barang<br>
-                        Kolom F: Jumlah<br>
-                        Kolom G: Catatan Item
+                    <div class="bg-teal-50 border border-teal-200 rounded-lg p-4 mb-5 text-xs text-teal-800">
+                        <p class="font-bold mb-2 flex items-center gap-1">
+                            <FileSpreadsheet class="w-4 h-4" /> Petunjuk Import:
+                        </p>
+                        <ul class="list-disc list-inside space-y-1 ml-1">
+                            <li>Gunakan file Excel <strong>Hasil Export Laporan</strong> (Format Berita Acara).</li>
+                            <li>Sistem akan otomatis mendeteksi:
+                                <ul class="pl-4 mt-1 list-[circle] text-teal-700">
+                                    <li>Jenis Mutasi (Masuk/Keluar) dari Judul.</li>
+                                    <li>Tanggal & No Bukti dari Kop Surat.</li>
+                                    <li>Detail Barang dari Tabel.</li>
+                                </ul>
+                            </li>
+                            <li>Untuk <strong>Mutasi Keluar</strong>, pastikan stok sistem mencukupi agar tidak error.</li>
+                        </ul>
                     </div>
 
                     <form @submit.prevent="submitImport">
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Pilih File</label>
-                            <input type="file" @input="importForm.file = $event.target.files[0]" accept=".xlsx, .xls"
-                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100" />
-                            <div v-if="importForm.errors.file" class="text-red-500 text-xs mt-1">{{ importForm.errors.file }}</div>
+                        <div class="mb-5">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Pilih File Excel (.xlsx)</label>
+                            
+                            <input 
+                                type="file" 
+                                @input="importForm.file = $event.target.files[0]" 
+                                accept=".xlsx, .xls"
+                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 transition cursor-pointer border border-gray-300 rounded-lg" 
+                            />
+                            
+                            <div v-if="importForm.errors.file" class="text-red-500 text-xs mt-1 font-medium">
+                                {{ importForm.errors.file }}
+                            </div>
+                        </div>
+
+                        <div v-if="importForm.processing" class="w-full bg-gray-100 rounded-full h-1.5 mb-4 overflow-hidden">
+                            <div class="bg-teal-500 h-1.5 rounded-full animate-pulse w-full"></div>
                         </div>
 
                         <div class="flex justify-end gap-3">
-                            <button type="button" @click="showImportModal = false" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50 text-sm">Batal</button>
-                            <button type="submit" :disabled="importForm.processing" class="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 text-sm flex items-center">
+                            <button 
+                                type="button" 
+                                @click="showImportModal = false" 
+                                class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition"
+                            >
+                                Batal
+                            </button>
+                            
+                            <button 
+                                type="submit" 
+                                :disabled="importForm.processing" 
+                                class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium shadow-sm flex items-center transition disabled:opacity-50"
+                            >
                                 <Upload v-if="!importForm.processing" class="w-4 h-4 mr-2" />
-                                <span v-else class="mr-2">Proses...</span>
+                                <span v-else class="mr-2">Memproses...</span>
                                 Upload
                             </button>
                         </div>

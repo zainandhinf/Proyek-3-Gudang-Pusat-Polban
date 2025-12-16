@@ -48,18 +48,30 @@ function removeItem(index) {
 // -------------------------------
 // SAAT PILIH BARANG
 // -------------------------------
+// function onBarangSelect(index) {
+//   const item = form.items[index];
+//   const barang = props.barangs.find((b) => b.id == item.barang_id);
+
+//   if (!barang) {
+//     item.satuan = "";
+//     item.stok = 0;
+//     return;
+//   }
+
+//   item.satuan = barang.satuan?.nama_satuan ?? "";
+//   item.stok = barang.stok_saat_ini ?? 0;
+// }
 function onBarangSelect(index) {
   const item = form.items[index];
   const barang = props.barangs.find((b) => b.id == item.barang_id);
 
   if (!barang) {
     item.satuan = "";
-    item.stok = 0;
-    return;
+    item.stok = 0; // Pastikan ini terisi
+  } else {
+    item.satuan = barang.satuan?.nama_satuan || "-";
+    item.stok = barang.stok_saat_ini; // Simpan stok master
   }
-
-  item.satuan = barang.satuan?.nama_satuan ?? "";
-  item.stok = barang.stok_saat_ini ?? 0;
 }
 
 // -------------------------------
@@ -208,7 +220,7 @@ function simpan() {
                     </select>
                   </td>
 
-                  <td class="px-4 py-3">
+                  <!-- <td class="px-4 py-3">
                     <input
                       type="number"
                       v-model.number="item.jumlah"
@@ -216,7 +228,20 @@ function simpan() {
                       class="w-full p-2 border border-gray-300 rounded-md text-sm text-center"
                       required
                     />
-                  </td>
+                  </td> -->
+                  <td class="px-3 py-2">
+                    <input
+                        type="number"
+                        min="1"
+                        v-model="item.jumlah"
+                        class="w-full p-2 border rounded-md text-sm"
+                        :class="{ 'border-red-500 ring-1 ring-red-500': form.jenis_mutasi === 'keluar' && item.jumlah > item.stok }"
+                        placeholder="0"
+                    />
+                    <div v-if="form.jenis_mutasi === 'keluar' && item.jumlah > item.stok" class="text-xs text-red-600 mt-1 font-bold">
+                        Maks: {{ item.stok }}
+                    </div>
+                </td>
 
                   <td class="px-4 py-3 text-center text-sm text-gray-600 bg-gray-50">
                     {{ item.stok }}

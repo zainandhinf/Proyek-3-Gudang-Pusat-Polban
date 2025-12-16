@@ -56,7 +56,7 @@ class StockOpnameController extends Controller
                 'no_opname' => 'SO-' . now()->format('YmdHis'),
                 'tanggal_opname' => now(),
                 'dicatat_oleh_user_id' => Auth::id(),
-                'status' => 'Proses',
+                'status' => StatusOpname::PROSES,
             ]);
 
             // B. Snapshot Stok (Copy stok saat ini ke tabel detail)
@@ -115,6 +115,10 @@ class StockOpnameController extends Controller
     public function update(Request $request, $id)
     {
         $opname = StockOpname::with('detailStockOpnames.barang')->findOrFail($id);
+
+        if ($opname->status === StatusOpname::SELESAI) {
+            return back()->with('error', 'Opname sudah selesai, data terkunci.');
+        }
 
         // SKENARIO 1: SELESAI (FINISH)
         if ($request->has('finish') && $request->finish == true) {

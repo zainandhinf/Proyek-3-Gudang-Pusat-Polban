@@ -3,6 +3,12 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import { throttle } from 'lodash';
+import { 
+    Search, 
+    FileSpreadsheet, // Icon Excel
+    Filter,
+    Calendar
+} from 'lucide-vue-next';
 
 const props = defineProps({
     kartuStok: Object,
@@ -11,12 +17,11 @@ const props = defineProps({
 });
 
 const search = ref(props.filters.search || '');
-const selectedYear = ref(props.filters.year);
+const selectedYear = ref(props.filters.year || new Date().getFullYear());
 
-// Nama Bulan Singkat
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
-// Watcher untuk Search & Filter Tahun
+// Search & Filter Watcher
 watch([search, selectedYear], throttle(([newSearch, newYear]) => {
     router.get(route('laporan.kartu-stok'), {
         search: newSearch,
@@ -24,226 +29,148 @@ watch([search, selectedYear], throttle(([newSearch, newYear]) => {
     }, { preserveState: true, replace: true });
 }, 500));
 
-// --- HELPER FUNCTIONS ---
-
-const parseKode = (kode) => {
-    if (!kode || kode.length < 10) return { kel: '-', urut: '-' };
-    return {
-        kel: kode.slice(0, 10),
-        urut: kode.slice(10)
-    };
-};
-
-const getTotalPemakaian = (mutasi) => {
-    if (!mutasi) return 0;
-    return Math.abs(Object.values(mutasi).reduce((acc, val) => val < 0 ? acc + val : acc, 0));
+// Export Function
+const exportExcel = () => {
+    const url = route('laporan.kartu-stok.export', { year: selectedYear.value });
+    window.open(url, '_blank');
 };
 
 const getMutationClass = (val) => {
-    // Mode Terang & Gelap untuk Angka Mutasi
-    if (val > 0) return 'text-green-600 dark:text-green-400 font-bold'; 
-    if (val < 0) return 'text-red-600 dark:text-red-400 font-bold';   
-    return 'text-gray-300 dark:text-gray-600';
+    if (val > 0) return 'text-green-600 font-bold'; // Masuk
+    if (val < 0) return 'text-red-600 font-bold';   // Keluar
+    return 'text-gray-300';
 };
-
-/* --- STYLE DEFINITIONS (DIPERBAIKI) --- */
-
-// 1. Base Class untuk Header (Tanpa Background Color agar tidak tabrakan)
-// Menggunakan border-gray-300 (lebih halus) untuk Light Mode
-const thBase = "px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-center border whitespace-nowrap " +
-               "text-gray-700 border-gray-300 " +  // Light Mode: Teks Abu Gelap, Border Halus
-               "dark:text-gray-200 dark:bg-gray-700 dark:border-gray-600"; // Dark Mode
-
-// 2. Class Khusus Header Standar (Pakai Background Abu)
-const thStandard = thBase + " bg-gray-100 dark:bg-gray-700";
-
-// 3. Class untuk Body Tabel
-const tdBase = "px-2 py-1 text-[11px] text-center border whitespace-nowrap " +
-               "text-gray-800 border-gray-300 " + // Light Mode: Text Hitam Soft, Border Halus
-               "dark:text-gray-300 dark:border-gray-600"; // Dark Mode
-
 </script>
 
-<style>
-/* CSS Khusus Print: Paksa Landscape, Font Kecil, & Warna Putih/Hitam */
-@media print {
-    @page {
-        size: landscape;
-        margin: 5mm;
-    }
-    body {
-        -webkit-print-color-adjust: exact;
-        font-size: 10px;
-        background-color: white !important;
-        color: black !important;
-    }
-    .print-hide {
-        display: none !important;
-    }
-    .overflow-x-auto {
-        overflow: visible !important;
-    }
-    /* Reset warna background saat print agar hemat tinta & bersih */
-    .print-bg-white {
-        background-color: white !important;
-        color: black !important;
-    }
-    .print-border-black {
-        border-color: black !important;
-    }
-    /* Warna header saat print (tetap berwarna tipis agar terbaca bedanya) */
-    .print-bg-gray { background-color: #f3f4f6 !important; } /* Gray-100 */
-    .print-bg-blue { background-color: #eff6ff !important; } /* Blue-50 */
-    .print-bg-yellow { background-color: #fefce8 !important; } /* Yellow-50 */
-    .print-bg-red { background-color: #fef2f2 !important; } /* Red-50 */
-}
-</style>
-
 <template>
-    <Head title="Kartu Pengawasan Stok" />
+    <Head title="Laporan Kartu Stok" />
 
     <AuthenticatedLayout>
-        <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-                Laporan Kartu Stok
-            </h2>
-        </template>
-
-        <div class="py-6">
-            <div class="mx-auto w-full px-2 sm:px-4">
+        <div class="py-8 px-4 md:px-6 lg:px-8">
+            
+            <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Kartu Stok Barang</h1>
+                    <p class="mt-1 text-sm text-gray-600">Monitoring pergerakan stok per bulan (Tahun {{ selectedYear }}).</p>
+                </div>
                 
-                <div class="flex flex-col md:flex-row justify-end items-center mb-4 gap-3 print-hide">
-                    <select v-model="selectedYear" class="rounded-md text-sm shadow-sm focus:ring-teal-500 focus:border-teal-500 
-                                                          border-gray-300 bg-white text-gray-900 
-                                                          dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100">
-                        <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
-                    </select>
+                <button 
+                    @click="exportExcel" 
+                    class="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-sm font-medium text-sm"
+                >
+                    <FileSpreadsheet class="w-4 h-4 mr-2" /> 
+                    Export Excel
+                </button>
+            </div>
 
-                    <input type="text" v-model="search" placeholder="Cari Kode/Nama..." 
-                           class="rounded-md text-sm w-full md:w-64 shadow-sm focus:ring-teal-500 focus:border-teal-500 
-                                  border-gray-300 bg-white text-gray-900 
-                                  dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100" />
-                    
-                    <button onclick="window.print()" class="px-4 py-2 bg-gray-700 text-white rounded-md text-sm hover:bg-gray-800 
-                                                            dark:bg-gray-600 dark:hover:bg-gray-500 flex items-center gap-2 shadow-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                        Print Landscape
-                    </button>
-                </div>
-
-                <div class="p-4 shadow-lg ring-1 min-h-[29.7cm] 
-                            bg-white text-black ring-gray-900/5 
-                            dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 
-                            print-bg-white">
-                    
-                    <div class="text-left mb-6">
-                        <h1 class="text-xl font-bold underline decoration-2 underline-offset-4 uppercase 
-                                   text-gray-900 dark:text-white print:text-black">
-                            KARTU PENGAWASAN (STOCK) BARANG
-                        </h1>
-                        <p class="mt-1 text-xs font-medium tracking-widest uppercase 
-                                  text-gray-600 dark:text-gray-400 print:text-gray-600">
-                            TAHUN ANGGARAN {{ selectedYear }}
-                        </p>
-                    </div>
-
-                    <div class="overflow-x-auto pb-4">
-                        <table class="min-w-max border-collapse border 
-                                      border-gray-300 dark:border-gray-600 print-border-black">
-                            <thead class="print:bg-gray-200">
-                                <tr>
-                                    <th :class="thStandard" class="min-w-[40px] print-bg-gray">No.</th>
-                                    <th :class="thStandard" class="min-w-[100px] print-bg-gray">Kel.<br>Barang</th>
-                                    <th :class="thStandard" class="min-w-[80px] print-bg-gray">No.<br>Urut</th>
-                                    <th :class="thStandard" class="min-w-[140px] print-bg-gray">Kode Barang</th>
-                                    <th :class="thStandard" class="min-w-[250px] text-left px-2 print-bg-gray">Nama Barang / Spesifikasi</th>
-                                    <th :class="thStandard" class="min-w-[60px] print-bg-gray">Satuan</th>
-                                    
-                                    <th :class="thBase" class="min-w-[70px] bg-blue-100 dark:bg-blue-900/40 print-bg-blue">Saldo<br>Awal</th>
-                                    
-                                    <th v-for="(m, i) in months" :key="i" :class="thStandard" class="min-w-[45px] print-bg-gray">
-                                        {{ m }}
-                                    </th>
-                                    
-                                    <th :class="thBase" class="min-w-[70px] bg-yellow-100 dark:bg-yellow-900/40 print-bg-yellow">Saldo<br>Akhir</th>
-                                    
-                                    <th :class="thBase" class="min-w-[80px] bg-red-50 dark:bg-red-900/30 print-bg-red">Total<br>Pemakaian</th>
-                                    
-                                    <th :class="thStandard" class="min-w-[150px] print-bg-gray">Ket</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="(item, index) in kartuStok.data" :key="item.id" 
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-700/50 print:break-inside-avoid">
-                                    
-                                    <td :class="tdBase">{{ index + 1 + (kartuStok.from ? kartuStok.from - 1 : 0) }}</td>
-                                    <td :class="tdBase">{{ parseKode(item.kode_barang).kel }}</td>
-                                    <td :class="tdBase">{{ parseKode(item.kode_barang).urut }}</td>
-                                    <td :class="tdBase" class="font-mono text-[10px]">{{ item.kode_barang }}</td>
-                                    
-                                    <td :class="tdBase" class="text-left px-2 font-medium whitespace-normal">
-                                        {{ item.nama_barang }}
-                                    </td>
-                                    
-                                    <td :class="tdBase">{{ item.satuan }}</td>
-                                    
-                                    <td :class="tdBase" class="font-semibold bg-blue-50 dark:bg-blue-900/20 print-bg-blue">
-                                        {{ item.saldo_awal }}
-                                    </td>
-                                    
-                                    <td v-for="monthIdx in 12" :key="monthIdx" :class="tdBase">
-                                        <span v-if="item.mutasi[monthIdx] && item.mutasi[monthIdx] !== 0" 
-                                              :class="getMutationClass(item.mutasi[monthIdx])">
-                                            {{ Math.abs(item.mutasi[monthIdx]) }}
-                                        </span>
-                                        <span v-else class="text-gray-300 dark:text-gray-600 text-[9px]">-</span>
-                                    </td>
-
-                                    <td :class="tdBase" class="font-bold bg-yellow-50 dark:bg-yellow-900/20 print-bg-yellow">
-                                        {{ item.saldo_akhir }}
-                                    </td>
-
-                                    <td :class="tdBase" class="font-bold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 print-bg-red">
-                                        {{ getTotalPemakaian(item.mutasi) }}
-                                    </td>
-
-                                    <td :class="tdBase" class="italic text-[10px] whitespace-normal text-left px-2 text-gray-500 dark:text-gray-400">
-                                        {{ item.keterangan || '' }}
-                                    </td>
-                                </tr>
-
-                                <tr v-if="kartuStok.data.length === 0">
-                                    <td colspan="22" class="px-6 py-8 text-center text-sm border 
-                                                            border-gray-300 dark:border-gray-600 
-                                                            text-gray-500 dark:text-gray-400">
-                                        Tidak ada data stok untuk ditampilkan.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="mt-4 border-t pt-4 flex items-center justify-between print-hide 
-                                border-gray-200 dark:border-gray-700">
-                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                            Halaman {{ kartuStok.current_page }} dari {{ kartuStok.last_page }} (Total {{ kartuStok.total }} Barang)
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                
+                <div class="p-5 border-b border-gray-100 bg-gray-50/50">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                        
+                        <div class="md:col-span-3 flex items-center bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm">
+                            <Calendar class="w-4 h-4 text-gray-500 mr-2" />
+                            <select v-model="selectedYear" class="bg-transparent border-none text-sm w-full focus:ring-0 p-0 text-gray-700">
+                                <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+                            </select>
                         </div>
-                        <div class="flex gap-1">
-                            <template v-for="(link, k) in kartuStok.links" :key="k">
-                                <Link v-if="link.url" :href="link.url" v-html="link.label" 
-                                      class="px-2 py-1 text-xs border rounded 
-                                             bg-white text-gray-700 hover:bg-gray-100 
-                                             dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700" 
-                                      :class="{'bg-teal-600 text-white border-teal-600 hover:bg-teal-700 dark:bg-teal-600 dark:text-white': link.active}" />
-                                <span v-else v-html="link.label" 
-                                      class="px-2 py-1 text-xs border rounded cursor-not-allowed
-                                             bg-gray-100 text-gray-400 
-                                             dark:bg-gray-900 dark:text-gray-600 dark:border-gray-700"></span>
-                            </template>
+
+                        <div class="md:col-span-5"></div>
+
+                        <div class="md:col-span-4 relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <Search class="h-4 w-4 text-gray-400" />
+                            </div>
+                            <input 
+                                type="text" 
+                                v-model="search" 
+                                placeholder="Cari nama atau kode barang..." 
+                                class="pl-10 block w-full rounded-lg border-gray-300 sm:text-sm focus:ring-teal-500 focus:border-teal-500"
+                            >
                         </div>
                     </div>
-
                 </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th rowspan="2" class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase border-r">No</th>
+                                <th rowspan="2" class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase border-r w-48">Barang</th>
+                                <th rowspan="2" class="px-2 py-3 text-center text-xs font-bold text-gray-500 uppercase border-r">Sat</th>
+                                <th rowspan="2" class="px-3 py-3 text-center text-xs font-bold text-gray-900 uppercase border-r bg-yellow-50">Awal</th>
+                                
+                                <th colspan="12" class="px-2 py-2 text-center text-xs font-bold text-gray-500 uppercase border-b">
+                                    Mutasi Bulan ({{ selectedYear }})
+                                </th>
+
+                                <th rowspan="2" class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase border-l">Pakai</th>
+                                <th rowspan="2" class="px-3 py-3 text-center text-xs font-bold text-gray-900 uppercase border-l bg-teal-50">Akhir</th>
+                            </tr>
+                            <tr>
+                                <th v-for="(m, i) in months" :key="i" class="px-2 py-1 text-center text-[10px] font-medium text-gray-500 border-r last:border-r-0 min-w-[40px]">
+                                    {{ m }}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-if="kartuStok.data.length === 0">
+                                <td colspan="18" class="px-6 py-8 text-center text-gray-500">
+                                    Data tidak ditemukan untuk tahun {{ selectedYear }}.
+                                </td>
+                            </tr>
+                            <tr v-for="(item, idx) in kartuStok.data" :key="item.id" class="hover:bg-gray-50 transition-colors text-xs">
+                                <td class="px-3 py-3 text-center text-gray-500 border-r">
+                                    {{ kartuStok.from + idx }}
+                                </td>
+                                <td class="px-4 py-3 border-r">
+                                    <div class="font-bold text-gray-800">{{ item.nama_barang }}</div>
+                                    <div class="text-[10px] text-gray-500 font-mono">{{ item.kode_barang }}</div>
+                                </td>
+                                <td class="px-2 py-3 text-center text-gray-500 border-r">{{ item.satuan }}</td>
+                                
+                                <td class="px-3 py-3 text-center font-bold text-gray-900 bg-yellow-50 border-r">
+                                    {{ item.saldo_awal }}
+                                </td>
+
+                                <template v-for="bulan in 12" :key="bulan">
+                                    <td class="px-1 py-3 text-center border-r border-gray-100" 
+                                        :class="getMutationClass(item.mutasi[bulan])">
+                                        {{ item.mutasi[bulan] === 0 ? '-' : (item.mutasi[bulan] > 0 ? '+'+item.mutasi[bulan] : item.mutasi[bulan]) }}
+                                    </td>
+                                </template>
+
+                                <td class="px-3 py-3 text-center text-red-700 font-medium border-l border-r">
+                                    {{ item.total_pemakaian }}
+                                </td>
+
+                                <td class="px-3 py-3 text-center font-bold text-teal-900 bg-teal-50 border-l">
+                                    {{ item.saldo_akhir }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div v-if="kartuStok.data.length > 0" class="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50/50">
+                    <div class="text-xs text-gray-700">
+                        Halaman {{ kartuStok.current_page }} dari {{ kartuStok.last_page }}
+                    </div>
+                    <div class="flex gap-1">
+                        <template v-for="(link, key) in kartuStok.links" :key="key">
+                            <Link 
+                                v-if="link.url" :href="link.url" v-html="link.label"
+                                class="px-3 py-1 border rounded text-xs font-medium transition"
+                                :class="{ 
+                                    'bg-teal-600 text-white border-teal-600': link.active, 
+                                    'bg-white text-gray-700 hover:bg-gray-50 border-gray-300': !link.active 
+                                }"
+                            />
+                            <span v-else v-html="link.label" class="px-3 py-1 border rounded text-xs text-gray-400 bg-gray-100 cursor-not-allowed"></span>
+                        </template>
+                    </div>
+                </div>
+
             </div>
         </div>
     </AuthenticatedLayout>

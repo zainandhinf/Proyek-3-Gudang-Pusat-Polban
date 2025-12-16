@@ -16,7 +16,7 @@ class MutasiBarangImport implements ToCollection
 {
     public function collection(Collection $rows)
     {
-        // 1. STATE PENAMPUNG DATA (Mencegah reset saat ganti baris)
+        // 1. STATE PENAMPUNG DATA
         $headerData = [
             'jenis' => null,
             'tanggal' => null,
@@ -25,13 +25,9 @@ class MutasiBarangImport implements ToCollection
             'keterangan' => '-',
         ];
 
-        // 2. DEFAULT MAPPING (Akan di-overwrite jika header tabel ditemukan)
-        // Kita set default berdasarkan file export terakhir Anda:
-        // A=No, B=Kode Kelompok, C=Kode Barang, D=Nama, E=Kelompok, F=Satuan, G=Stok, H=Harga
-        // TAPI file import Anda sepertinya: A=No, B=Kode Barang, C=Nama...
-        // Jadi kita buat dynamic.
+        // 2. MAPPING KOLOM DINAMIS
         $colIndex = [
-            'kode_barang' => -1, // -1 artinya belum ketemu
+            'kode_barang' => -1,
             'nama_barang' => -1,
             'jumlah'      => -1, 
             'catatan'     => -1,
@@ -39,7 +35,7 @@ class MutasiBarangImport implements ToCollection
 
         DB::transaction(function () use ($rows, &$headerData, &$colIndex) {
             foreach ($rows as $row) {
-                // Bersihkan setiap sel dari spasi misterius
+                // Bersihkan setiap sel dari karakter aneh
                 $row = $row->map(fn($item) => $this->cleanValue($item));
                 $firstCol = strtoupper($row[0] ?? '');
 
@@ -49,7 +45,7 @@ class MutasiBarangImport implements ToCollection
                 if (Str::contains($firstCol, 'BUKTI MASUK')) $headerData['jenis'] = 'masuk';
                 if (Str::contains($firstCol, 'BUKTI KELUAR')) $headerData['jenis'] = 'keluar';
 
-                // Cari Tanggal di kolom manapun di baris ini
+                // Cari Tanggal (Flexible Format)
                 if (Str::contains($firstCol, 'TGL')) {
                     foreach ($row as $cell) {
                         if (Str::contains(strtoupper($cell), 'DECEMBER') || preg_match('/\d{2}[\/\-\s]\d{2}[\/\-\s]\d{4}/', $cell)) {
@@ -70,8 +66,6 @@ class MutasiBarangImport implements ToCollection
                 // ==========================================================
                 // B. DETEKSI POSISI KOLOM (MAPPING DINAMIS)
                 // ==========================================================
-                // Kita cek seluruh baris, jika ada kata "KODE BARANG" atau "JUMLAH"
-                // kita kunci index kolomnya.
                 $isHeaderRow = false;
                 foreach ($row as $idx => $val) {
                     $valUpper = strtoupper($val);
@@ -99,11 +93,10 @@ class MutasiBarangImport implements ToCollection
                 if (!empty($headerData['no_bukti']) && $colIndex['kode_barang'] !== -1) {
                     
                     $kodeBarang = $row[$colIndex['kode_barang']] ?? '';
-                    $namaBarang = $row[$colIndex['nama_barang']] ?? ''; // Cadangan jika kode tidak ketemu
+                    $namaBarang = $row[$colIndex['nama_barang']] ?? '';
                     $jumlah     = (int) ($row[$colIndex['jumlah']] ?? 0);
                     $catatan    = $row[$colIndex['catatan']] ?? null;
 
-                    // Validasi minimal: Kode atau Nama harus ada, dan Jumlah > 0
                     if ((!empty($kodeBarang) || !empty($namaBarang)) && $jumlah > 0) {
                         $this->saveDetail($headerData, $kodeBarang, $namaBarang, $jumlah, $catatan);
                     }
@@ -118,7 +111,7 @@ class MutasiBarangImport implements ToCollection
         $mutasi = MutasiBarang::firstOrCreate(
             ['no_bukti' => $header['no_bukti']], 
             [
-                'jenis_mutasi' => $header['jenis'] ?? 'keluar', // Default
+                'jenis_mutasi' => $header['jenis'] ?? 'keluar',
                 'tanggal_mutasi' => $header['tanggal'] ?? now(),
                 'no_dokumen' => $header['no_dokumen'],
                 'keterangan' => 'Import Excel Auto',
@@ -131,15 +124,21 @@ class MutasiBarangImport implements ToCollection
         if (!empty($kode)) {
             $barang = Barang::where('kode_barang', $kode)->first();
         }
-        
-        // Jika tidak ketemu by Kode, coba by Nama (persis)
         if (!$barang && !empty($nama)) {
             $barang = Barang::where('nama_barang', 'LIKE', $nama)->first();
         }
 
-        // 3. Simpan Detail Jika Barang Ditemukan
+        // 3. Simpan Detail & Update Stok
         if ($barang) {
-            // Cek duplikasi agar tidak double input jika file diupload 2x
+            
+            // --- VALIDASI STOK (Baru) ---
+            if (($header['jenis'] ?? 'keluar') === 'keluar') {
+                if ($barang->stok_saat_ini < $jumlah) {
+                    throw new \Exception("Gagal Import: Stok {$barang->nama_barang} tidak cukup! (Stok: {$barang->stok_saat_ini}, Minta: {$jumlah})");
+                }
+            }
+            // -----------------------------
+
             $exists = DetailMutasiBarang::where('mutasi_barang_id', $mutasi->id)
                         ->where('barang_id', $barang->id)
                         ->exists();
@@ -162,9 +161,6 @@ class MutasiBarangImport implements ToCollection
         }
     }
 
-    /**
-     * Membersihkan string dari karakter aneh
-     */
     private function cleanValue($value)
     {
         if (is_null($value)) return '';

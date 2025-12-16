@@ -2,22 +2,30 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
-import { debounce } from 'lodash'; // Pastikan import lodash
+import { debounce } from 'lodash';
+import { 
+    Search, 
+    Plus, 
+    Edit2, 
+    Trash2, 
+    User,
+    Shield
+} from 'lucide-vue-next';
 
 // Menerima data dari Controller
 const props = defineProps({
     pemohons: Object, 
-    filters: Object // Menerima filter search dari controller
+    filters: Object 
 });
 
-// Setup Search dengan nilai default dari controller (biar pas refresh ga ilang)
+// Setup Search
 const search = ref(props.filters?.search || '');
 
-// Logic Search Otomatis (Delay 300ms biar ga berat request ke server)
+// Logic Search Otomatis
 watch(search, debounce((value) => {
     router.get(route('manajemen-akun.pemohon.index'), { search: value }, {
-        preserveState: true, // Biar scroll ga loncat ke atas
-        replace: true,       // Biar history browser ga penuh sampah search
+        preserveState: true,
+        replace: true,
     });
 }, 300));
 
@@ -25,141 +33,143 @@ watch(search, debounce((value) => {
 const deleteUser = (id, name) => {
     if (confirm(`Apakah Anda yakin ingin menghapus akun ${name}?`)) {
         router.delete(route('pemohon.destroy', id), {
-            onSuccess: () => {
-                // Optional: Tambahan logic kalau sukses
-            }
+            preserveScroll: true,
         });
     }
 };
 
 const page = usePage();
-const successMessage = computed(() => page.props.flash?.success);
 </script>
 
 <template>
     <Head title="Manajemen Akun Pemohon" />
 
     <AuthenticatedLayout>
-        <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Manajemen Akun Pemohon
-            </h2>
-        </template>
-
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                
-                <div v-if="successMessage" class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ successMessage }}
+        <div class="py-8 px-4 md:px-6 lg:px-8">
+            
+            <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Manajemen Akun Pemohon</h1>
+                    <p class="mt-1 text-sm text-gray-600">Kelola data akun pemohon barang dari berbagai unit kerja.</p>
                 </div>
+                
+                <Link 
+                    :href="route('pemohon.create')" 
+                    class="flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 shadow-sm transition font-medium text-sm"
+                >
+                    <Plus class="w-4 h-4 mr-2" />
+                    Tambah Akun
+                </Link>
+            </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    
-                    <div class="flex justify-between items-center mb-6">
-                        <div>
-                            <h3 class="text-lg font-medium text-gray-900">Daftar Akun Pemohon</h3>
-                            <p class="text-sm text-gray-500">Kelola akun pemohon barang dari berbagai unit kerja</p>
+            <div v-if="$page.props.flash?.success" class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md flex items-center">
+                <Shield class="w-5 h-5 mr-2" />
+                {{ $page.props.flash.success }}
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                
+                <div class="p-5 border-b border-gray-100 bg-gray-50/50 flex justify-end">
+                    <div class="relative w-full md:w-72">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <Search class="w-5 h-5 text-gray-400" />
                         </div>
-                        
-                        <Link 
-                            :href="route('pemohon.create')" 
-                            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
-                        >
-                            <span>+ Tambah Akun</span>
-                        </Link>
-                    </div>
-
-                    <div class="flex gap-4 mb-4 justify-end">
                         <input 
                             v-model="search"
                             type="text" 
                             placeholder="Cari nama atau NIP..." 
-                            class="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 w-64"
+                            class="w-full py-2 pl-10 text-sm border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 shadow-sm"
                         >
                     </div>
+                </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Pemohon</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIP / ID</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit / Jurusan</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="(user, index) in pemohons.data" :key="user.id" class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ (pemohons.current_page - 1) * pemohons.per_page + index + 1 }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs mr-3">
-                                                {{ user.name.substring(0, 2).toUpperCase() }}
-                                            </div>
-                                            <div class="text-sm font-medium text-gray-900">{{ user.name }}</div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">No</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Pemohon</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIP / ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit / Jurusan</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-if="pemohons.data.length === 0">
+                                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                    Data akun tidak ditemukan.
+                                </td>
+                            </tr>
+                            <tr v-for="(user, index) in pemohons.data" :key="user.id" class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    {{ (pemohons.current_page - 1) * pemohons.per_page + index + 1 }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="h-9 w-9 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-xs mr-3 border border-teal-200">
+                                            {{ user.name.substring(0, 2).toUpperCase() }}
                                         </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ user.nip }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ user.unit_kerja?.nama_unit || '-' }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ user.email }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                        <div class="flex justify-center gap-3">
-                                            <Link :href="route('pemohon.edit', user.id)" class="text-indigo-600 hover:text-indigo-900" title="Edit">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                                                </svg>
-                                            </Link>
-                                            
-                                            <button 
-                                                @click="deleteUser(user.id, user.name)" 
-                                                class="text-red-600 hover:text-red-900" 
-                                                title="Hapus"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                        <div class="text-sm font-medium text-gray-900">{{ user.name }}</div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
+                                    {{ user.nip }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                    <span v-if="user.unit_kerja" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                                        {{ user.unit_kerja.nama_unit }}
+                                    </span>
+                                    <span v-else class="text-gray-400">-</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ user.email }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                    <div class="flex justify-center gap-2">
+                                        <Link :href="route('pemohon.edit', user.id)" class="p-1.5 text-teal-600 hover:bg-teal-50 rounded-md transition-colors" title="Edit">
+                                            <Edit2 class="w-4 h-4" />
+                                        </Link>
+                                        
+                                        <button 
+                                            @click="deleteUser(user.id, user.name)" 
+                                            class="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors" 
+                                            title="Hapus"
+                                        >
+                                            <Trash2 class="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-                                <tr v-if="pemohons.data.length === 0">
-                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                        Data tidak ditemukan.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <div v-if="pemohons.data.length > 0" class="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50/50">
+                    <div class="text-sm text-gray-700">
+                        Halaman {{ pemohons.current_page }} dari {{ pemohons.last_page }}
                     </div>
-
-                    <div class="mt-4 flex justify-end">
+                    <div class="flex gap-1">
                         <template v-for="(link, key) in pemohons.links" :key="key">
                             <Link 
                                 v-if="link.url" 
                                 :href="link.url" 
                                 v-html="link.label"
-                                class="px-3 py-1 border rounded mx-1 text-sm"
-                                :class="{ 'bg-blue-600 text-white': link.active, 'bg-white text-gray-700 hover:bg-gray-50': !link.active }"
+                                class="relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md transition-colors shadow-sm"
+                                :class="{ 
+                                    'bg-teal-600 border-teal-600 text-white hover:bg-teal-700': link.active, 
+                                    'bg-white border-gray-300 text-gray-700 hover:bg-gray-50': !link.active 
+                                }"
                             />
                             <span 
                                 v-else 
                                 v-html="link.label"
-                                class="px-3 py-1 border rounded mx-1 text-sm text-gray-400 bg-gray-100"
+                                class="relative inline-flex items-center px-4 py-2 text-sm font-medium border bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed rounded-md shadow-sm"
                             ></span>
                         </template>
                     </div>
-
                 </div>
+
             </div>
         </div>
     </AuthenticatedLayout>

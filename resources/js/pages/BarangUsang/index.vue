@@ -1,14 +1,28 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { ref, watch, computed } from 'vue';
 import { throttle } from 'lodash';
-import { Search, Plus, Eye, Trash2, Upload, FileSpreadsheet, X } from 'lucide-vue-next';
+import { 
+    Search, 
+    Plus, 
+    Eye, 
+    Trash2, 
+    Upload, 
+    FileSpreadsheet, 
+    X,
+    Filter
+} from 'lucide-vue-next';
 
 const props = defineProps({
   barangUsangs: Object,
   filters: Object,
 });
+
+const page = usePage();
+const user = computed(() => page.props.auth.user);
+// Asumsi role operator adalah 'operator'
+const isOperator = computed(() => user.value.role === 'operator');
 
 const search = ref(props.filters?.search ?? '');
 
@@ -26,9 +40,7 @@ const deleteCatatan = (id) => {
 const formatDate = (dateString) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleString('id-ID', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
+        day: '2-digit', month: 'long', year: 'numeric',
     });
 };
 
@@ -52,8 +64,10 @@ const submitImport = () => {
     <div class="py-8 px-4 md:px-6 lg:px-8">
       
       <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">Catatan Barang Usang</h1>
-        <p class="mt-1 text-sm text-gray-600">Dokumen pencatatan kerusakan atau penghapusan aset.</p>
+        <h1 class="text-3xl font-bold text-gray-900">Barang Usang / Rusak</h1>
+        <p class="mt-1 text-sm text-gray-600">
+            Pencatatan dan berita acara penghapusan aset rusak
+        </p>
       </div>
 
       <div v-if="$page.props.flash?.success" class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md">
@@ -63,7 +77,7 @@ const submitImport = () => {
           {{ $page.props.flash.error }}
       </div>
       
-      <div class="flex justify-end mt-6 gap-x-3">
+      <div v-if="isOperator" class="flex justify-end mt-6 gap-x-3">
          <button @click="showImportModal = true" class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 shadow-sm transition font-medium text-sm">
             <Upload class="w-4 h-4 mr-2" />
             Import Excel
@@ -76,73 +90,100 @@ const submitImport = () => {
 
         <Link :href="route('barang-usang.create')" 
           class="flex items-center px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 shadow-sm transition font-medium text-sm">
-          <Plus class="w-4 h-4 mr-2" /> Buat Catatan Baru
+          <Plus class="w-4 h-4 mr-2" /> 
+          Catat Kerusakan
         </Link>
       </div>
 
-      <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-        <div class="p-4 border-b border-gray-200 bg-gray-50 flex justify-end">
-            <div class="relative w-full md:w-64">
-                <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input type="text" v-model="search" placeholder="Cari No Catat / Bukti..." 
-                  class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-teal-500 focus:border-teal-500 shadow-sm" />
+      <div class="mt-8 bg-white rounded-lg shadow-md overflow-hidden ring-1 ring-gray-900/5">
+        
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800">Riwayat Kerusakan</h3>
+                    <p class="text-sm text-gray-500 mt-1">Daftar dokumen berita acara</p>
+                </div>
+                
+                <div class="flex gap-3 w-full md:w-auto">
+                    <button class="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 shadow-sm">
+                        <Filter class="w-4 h-4 mr-2 text-gray-500" />
+                        Filter
+                    </button>
+
+                    <div class="relative w-full md:w-64">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <Search class="w-5 h-5 text-gray-400" />
+                        </div>
+                        <input 
+                            v-model="search" 
+                            type="text" 
+                            placeholder="Cari No Dokumen..." 
+                            class="w-full py-2 pl-10 text-sm border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 shadow-sm" 
+                        />
+                    </div>
+                </div>
             </div>
         </div>
 
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase w-12">No</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dokumen</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
-              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Total Item</th>
-              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Aksi</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-             <tr v-if="barangUsangs.data.length === 0">
-                <td colspan="6" class="px-6 py-8 text-center text-gray-500">Belum ada data catatan.</td>
-             </tr>
-             <tr v-for="(item, idx) in barangUsangs.data" :key="item.id" class="hover:bg-gray-50">
-               <td class="px-6 py-4 text-center text-sm text-gray-500">{{ barangUsangs.from + idx }}</td>
-               <td class="px-6 py-4">
-                 <div class="font-bold text-gray-900">{{ item.no_catat }}</div>
-                 <div class="text-xs text-gray-500 mt-1">Bukti: {{ item.no_bukti }}</div>
-               </td>
-               <td class="px-6 py-4 text-sm text-gray-700">{{ formatDate(item.tanggal_catat) }}</td>
-               <td class="px-6 py-4 text-sm text-gray-600 truncate max-w-xs">{{ item.keterangan || '-' }}</td>
-               <td class="px-6 py-4 text-center text-sm font-bold text-gray-800">
-                  {{ item.detail ? item.detail.length : 0 }} Barang
-               </td>
-               <td class="px-6 py-4 text-center">
-                  <div class="flex justify-center gap-2">
-                    <Link :href="route('barang-usang.show', item.id)" class="text-blue-600 hover:bg-blue-50 p-1.5 rounded" title="Lihat Detail">
-                      <Eye class="w-4 h-4" />
-                    </Link>
-                    <button @click="deleteCatatan(item.id)" class="text-red-600 hover:bg-red-50 p-1.5 rounded" title="Hapus Dokumen">
-                      <Trash2 class="w-4 h-4" />
-                    </button>
-                  </div>
-               </td>
-             </tr>
-          </tbody>
-        </table>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase w-16">No</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dokumen</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Item</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                <tr v-if="barangUsangs.data.length === 0">
+                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                        Belum ada data catatan barang rusak.
+                    </td>
+                </tr>
+                <tr v-for="(item, idx) in barangUsangs.data" :key="item.id" class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 text-center text-sm text-gray-900">{{ barangUsangs.from + idx }}</td>
+                <td class="px-6 py-4">
+                    <div class="font-mono font-bold text-teal-700 text-sm">{{ item.no_catat }}</div>
+                    <div v-if="item.no_bukti" class="text-xs text-gray-500 mt-1">Ref: {{ item.no_bukti }}</div>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-700">{{ formatDate(item.tanggal_catat) }}</td>
+                <td class="px-6 py-4 text-sm text-gray-600 truncate max-w-xs">{{ item.keterangan || '-' }}</td>
+                <td class="px-6 py-4 text-center">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        {{ item.detail ? item.detail.length : 0 }} Item
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium">
+                    <div class="flex justify-center gap-2">
+                        <Link :href="route('barang-usang.show', item.id)" class="p-1.5 text-teal-600 hover:text-teal-800 hover:bg-teal-50 rounded transition-colors" title="Lihat Detail">
+                            <Eye class="w-4 h-4" />
+                        </Link>
+                        <button v-if="isOperator" @click="deleteCatatan(item.id)" class="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors" title="Hapus Dokumen">
+                            <Trash2 class="w-4 h-4" />
+                        </button>
+                    </div>
+                </td>
+                </tr>
+            </tbody>
+            </table>
+        </div>
         
         <div v-if="barangUsangs.data.length > 0" class="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50/50">
             <div class="text-sm text-gray-700">
-                Halaman {{ barangUsangs.current_page }} dari {{ barangUsangs.last_page }}
+                Menampilkan <span class="font-medium">{{ barangUsangs.from ?? 0 }}</span>-<span class="font-medium">{{ barangUsangs.to ?? 0 }}</span> dari <span class="font-medium">{{ barangUsangs.total }}</span> data
             </div>
             <div class="flex gap-1">
                 <template v-for="(link, index) in barangUsangs.links" :key="index">
                     <Link v-if="link.url" :href="link.url" preserve-scroll v-html="link.label" 
-                          class="relative inline-flex items-center px-3 py-1 text-sm font-medium border rounded-md transition-colors shadow-sm"
-                          :class="{'bg-teal-600 border-teal-600 text-white': link.active, 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50': !link.active}" />
-                    <span v-else v-html="link.label" class="relative inline-flex items-center px-3 py-1 text-sm font-medium border bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed rounded-md"></span>
+                          class="relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md transition-colors shadow-sm"
+                          :class="{'bg-teal-600 border-teal-600 text-white hover:bg-teal-700': link.active, 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50': !link.active}" />
+                    <span v-else v-html="link.label" class="relative inline-flex items-center px-4 py-2 text-sm font-medium border bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed rounded-md shadow-sm"></span>
                 </template>
             </div>
         </div>
-
       </div>
     </div>
 
@@ -175,13 +216,17 @@ const submitImport = () => {
                             <div v-if="importForm.errors.file" class="text-red-500 text-xs mt-1">{{ importForm.errors.file }}</div>
                         </div>
 
+                        <div v-if="importForm.progress" class="w-full bg-gray-100 rounded-full h-2 mb-4 overflow-hidden">
+                            <div class="bg-teal-600 h-2 rounded-full transition-all duration-300" :style="{ width: importForm.progress.percentage + '%' }"></div>
+                        </div>
+
                         <div class="flex justify-end gap-3">
                             <button type="button" @click="showImportModal = false" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition">
                                 Batal
                             </button>
                             <button type="submit" :disabled="importForm.processing" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium shadow-sm flex items-center transition disabled:opacity-50">
                                 <Upload v-if="!importForm.processing" class="w-4 h-4 mr-2" />
-                                <span v-else class="mr-2">Proses...</span>
+                                <span v-else class="mr-2">Mengupload...</span>
                                 Upload
                             </button>
                         </div>
@@ -189,5 +234,6 @@ const submitImport = () => {
                 </div>
             </div>
         </div>
+
   </AuthenticatedLayout>
 </template>

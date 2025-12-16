@@ -92,19 +92,26 @@ class BarangController extends Controller
 
     public function update(Request $request, Barang $barang)
     {
-        // Validasi (Kode barang biasanya tidak diganti, tapi jika perlu fitur itu, logikanya mirip store)
+        // Validasi
         $request->validate([
             'nama_barang' => 'required|max:255',
             'satuan_id' => 'required|exists:satuans,id',
             'harga' => 'required|numeric|min:0',
             'foto' => 'nullable|image|max:2048',
+            // Jika ada input stok di form edit, validasi juga
+            'stok' => 'nullable|numeric|min:0', 
         ]);
 
-        $data = $request->except(['foto', 'kode_barang', 'method']);
+        // Ambil semua data kecuali field teknis
+        $data = $request->except(['foto', 'kode_barang', 'method', 'stok']); // Exclude 'stok' agar tidak error
+
+        // MAPPING MANUAL: Jika ada input 'stok', masukkan ke 'stok_saat_ini'
+        if ($request->has('stok')) {
+            $data['stok_saat_ini'] = $request->input('stok');
+        }
 
         // Handle Foto Baru
         if ($request->hasFile('foto')) {
-            // Hapus foto lama jika ada
             if ($barang->foto) {
                 Storage::disk('public')->delete($barang->foto);
             }

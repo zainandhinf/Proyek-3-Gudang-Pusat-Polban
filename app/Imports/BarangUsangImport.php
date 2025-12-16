@@ -125,6 +125,10 @@ class BarangUsangImport implements ToCollection
         $barang = Barang::where('nama_barang', 'LIKE', trim($namaBarang))->first();
 
         if ($barang) {
+            if ($barang->stok_saat_ini < $jumlah) {
+                throw new \Exception("Gagal Import: Stok {$barang->nama_barang} tidak cukup untuk dicatat rusak sejumlah {$jumlah}. Stok tersedia: {$barang->stok_saat_ini}");
+            }
+
             // 3. Cek Duplikat Detail
             $exists = DetailBarangUsang::where('barang_usang_id', $laporan->id)
                         ->where('barang_id', $barang->id)

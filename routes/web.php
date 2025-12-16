@@ -139,6 +139,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/barangs/import', [BarangController::class, 'import'])->name('barangs.import');
     
     Route::get('/laporan/kartu-stok', [LaporanController::class, 'kartuStok'])->name('laporan.kartu-stok');
+    Route::get('/laporan/kartu-stok/export', [LaporanController::class, 'exportKartuStok'])->name('laporan.kartu-stok.export');
 });
 
 require __DIR__ . '/auth.php';
