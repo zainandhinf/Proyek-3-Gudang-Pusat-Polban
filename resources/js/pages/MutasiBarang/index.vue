@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, computed } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Link, router, usePage } from "@inertiajs/vue3";
+import { Link, router, usePage, useForm } from "@inertiajs/vue3";
 import { throttle } from 'lodash';
 import { 
     Plus, 
@@ -11,7 +11,9 @@ import {
     Eye, 
     Upload, 
     Download, 
-    Filter 
+    Filter,
+    X, 
+    FileSpreadsheet
 } from "lucide-vue-next";
 
 // Props
@@ -55,6 +57,19 @@ const deleteMutasi = (id) => {
         });
     }
 };
+
+// --- LOGIC IMPORT ---
+const showImportModal = ref(false);
+const importForm = useForm({ file: null });
+
+const submitImport = () => {
+    importForm.post(route('mutasi-barang.import'), {
+        onSuccess: () => {
+            showImportModal.value = false;
+            importForm.reset();
+        },
+    });
+};
 </script>
 
 <template>
@@ -71,10 +86,15 @@ const deleteMutasi = (id) => {
             </div>
 
             <div v-if="isOperator" class="flex justify-end mt-6 gap-x-3">
-                <button class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 shadow-sm transition">
-                    <Download class="w-4 h-4 mr-2" />
-                    Export
+                <button @click="showImportModal = true" class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 shadow-sm transition">
+                    <Upload class="w-4 h-4 mr-2" />
+                    Import Excel
                 </button>
+
+                <a :href="route('laporan.mutasi')" target="_blank" class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 shadow-sm transition">
+                    <FileSpreadsheet class="w-4 h-4 mr-2" />
+                    Ke Laporan
+                </a>
                 <Link
                     :href="route('mutasi-barang.create')"
                     class="flex items-center px-4 py-2 text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-sm transition"
@@ -218,6 +238,48 @@ const deleteMutasi = (id) => {
                     </div>
                 </div>
 
+            </div>
+        </div>
+
+        <div v-if="showImportModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+                <div class="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
+                    <h3 class="font-bold text-gray-800">Import Mutasi Barang</h3>
+                    <button @click="showImportModal = false" class="text-gray-400 hover:text-gray-600">
+                        <X class="w-5 h-5" />
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4 text-xs text-blue-700">
+                        <strong>Format Wajib (Excel):</strong><br>
+                        Kolom A: Tanggal (dd-mm-yyyy)<br>
+                        Kolom B: Jenis (masuk/keluar)<br>
+                        Kolom C: No Bukti (Grouping)<br>
+                        Kolom D: Keterangan<br>
+                        Kolom E: Kode Barang<br>
+                        Kolom F: Jumlah<br>
+                        Kolom G: Catatan Item
+                    </div>
+
+                    <form @submit.prevent="submitImport">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Pilih File</label>
+                            <input type="file" @input="importForm.file = $event.target.files[0]" accept=".xlsx, .xls"
+                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100" />
+                            <div v-if="importForm.errors.file" class="text-red-500 text-xs mt-1">{{ importForm.errors.file }}</div>
+                        </div>
+
+                        <div class="flex justify-end gap-3">
+                            <button type="button" @click="showImportModal = false" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50 text-sm">Batal</button>
+                            <button type="submit" :disabled="importForm.processing" class="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 text-sm flex items-center">
+                                <Upload v-if="!importForm.processing" class="w-4 h-4 mr-2" />
+                                <span v-else class="mr-2">Proses...</span>
+                                Upload
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </AuthenticatedLayout>

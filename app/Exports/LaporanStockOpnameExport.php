@@ -2,32 +2,33 @@
 
 namespace App\Exports;
 
-use Illuminate\Contracts\View\View;
-use Maatwebsite\Excel\Concerns\FromView;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithStyles;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
+use Maatwebsite\Excel\Concerns\Exportable;
 
-class LaporanStockOpnameExport implements FromView, ShouldAutoSize, WithStyles
+class LaporanStockOpnameExport implements WithMultipleSheets
 {
+    use Exportable;
+
     protected $opnames;
 
+    // Constructor menerima Collection data Header Stock Opname
     public function __construct($opnames)
     {
         $this->opnames = $opnames;
     }
 
-    public function view(): View
+    /**
+     * @return array
+     */
+    public function sheets(): array
     {
-        return view('exports.laporan_stock_opname_excel', [
-            'opnames' => $this->opnames
-        ]);
-    }
+        $sheets = [];
 
-    public function styles(Worksheet $sheet)
-    {
-        return [
-             1 => ['font' => ['family' => 'Arial']],
-        ];
+        foreach ($this->opnames as $opname) {
+            // Panggil class per-sheet untuk setiap data opname
+            $sheets[] = new StockOpnamePerSheetExport($opname);
+        }
+
+        return $sheets;
     }
 }

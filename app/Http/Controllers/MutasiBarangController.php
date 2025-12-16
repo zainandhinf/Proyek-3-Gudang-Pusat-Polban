@@ -8,6 +8,8 @@ use App\Models\Barang;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use App\Imports\MutasiBarangImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MutasiBarangController extends Controller
 {
@@ -321,6 +323,32 @@ class MutasiBarangController extends Controller
         return redirect()
             ->route('mutasi-barang.index')
             ->with('success', 'Data barang masuk dan semua detailnya berhasil dihapus.');
+    }
+
+
+    /**
+     * Import mutasi barang from Excel file.
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:2048',
+        ]);
+
+        try {
+            Excel::import(new MutasiBarangImport, $request->file('file'));
+            return back()->with('success', 'Data mutasi berhasil diimport!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal import: ' . $e->getMessage());
+        }
+    }
+    
+    // Opsional: Buat route untuk download template excel kosong
+    public function template()
+    {
+        // Logika generate file excel dummy header
+        // Header: Tanggal, Jenis, No Bukti, Keterangan, Kode Barang, Jumlah, Catatan
+        // ... (bisa skip dulu jika user buat manual)
     }
 
 }

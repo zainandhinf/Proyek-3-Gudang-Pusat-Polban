@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage, useForm } from '@inertiajs/vue3';
 import { ref, watch, computed, nextTick } from 'vue';
 import { throttle } from 'lodash';
 import QrcodeVue from 'qrcode.vue';
@@ -12,7 +12,8 @@ import {
     Trash2,
     QrCode,
     X,
-    Download
+    Download,
+    FileSpreadsheet
 } from "lucide-vue-next";
 
 // Props dari Controller
@@ -96,6 +97,19 @@ const downloadQrCode = async () => {
         console.error("Canvas QR Code tidak ditemukan di DOM");
     }
 };
+
+// --- LOGIC IMPORT ---
+const showImportModal = ref(false);
+const importForm = useForm({ file: null });
+
+const submitImport = () => {
+    importForm.post(route('barangs.import'), {
+        onSuccess: () => {
+            showImportModal.value = false;
+            importForm.reset();
+        },
+    });
+};
 </script>
 
 <template>
@@ -117,10 +131,19 @@ const downloadQrCode = async () => {
             </div>
 
             <div class="flex justify-end mt-6 gap-x-3">
-                <button v-if="isOperator" class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 shadow-sm transition">
+                <button 
+                    v-if="isOperator" 
+                    @click="showImportModal = true"
+                    class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 shadow-sm transition"
+                >
                     <Upload class="w-4 h-4 mr-2" />
                     Import Excel
                 </button>
+
+                <a :href="route('laporan.data-barang')" target="_blank" class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 shadow-sm transition">
+                    <FileSpreadsheet class="w-4 h-4 mr-2" />
+                    Laporan
+                </a>
                 
                 <Link v-if="isOperator" :href="route('barangs.create')" class="flex items-center px-4 py-2 text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-sm transition">
                     <Plus class="w-4 h-4 mr-2" />
@@ -297,6 +320,57 @@ const downloadQrCode = async () => {
                         <Download class="w-4 h-4" />
                         Download
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="showImportModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 transition-opacity">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+                <div class="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
+                    <h3 class="font-bold text-gray-800">Import Data Barang</h3>
+                    <button @click="showImportModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-1 transition">
+                        <X class="w-5 h-5" />
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <div class="bg-teal-50 border border-teal-200 rounded-lg p-4 mb-5 text-xs text-teal-800">
+                        <p class="font-bold mb-1 flex items-center gap-1">
+                            <FileSpreadsheet class="w-3 h-3" /> Konsep Import (Akumulasi):
+                        </p>
+                        <ul class="list-disc list-inside space-y-0.5 ml-1">
+                            <li>Gunakan file Excel hasil export laporan.</li>
+                            <li>
+                                <strong>Barang Sudah Ada:</strong> Stok di Excel akan 
+                                <span class="font-bold underline">DITAMBAHKAN</span> ke stok sistem saat ini.
+                                <br>
+                                <span class="italic text-gray-500">(Contoh: Sistem 10 + Excel 5 = Jadi 15)</span>
+                            </li>
+                            <li>
+                                <strong>Barang Belum Ada:</strong> Akan otomatis dibuat sebagai Data Baru.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <form @submit.prevent="submitImport">
+                        <div class="mb-5">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Pilih File Excel (.xlsx)</label>
+                            <input type="file" @input="importForm.file = $event.target.files[0]" accept=".xlsx, .xls"
+                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 transition cursor-pointer border border-gray-300 rounded-lg" />
+                            <div v-if="importForm.errors.file" class="text-red-500 text-xs mt-1">{{ importForm.errors.file }}</div>
+                        </div>
+
+                        <div class="flex justify-end gap-3">
+                            <button type="button" @click="showImportModal = false" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition">
+                                Batal
+                            </button>
+                            <button type="submit" :disabled="importForm.processing" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium shadow-sm flex items-center transition disabled:opacity-50">
+                                <Upload v-if="!importForm.processing" class="w-4 h-4 mr-2" />
+                                <span v-else class="mr-2">Mengupload...</span>
+                                Upload
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

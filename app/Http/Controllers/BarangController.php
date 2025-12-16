@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
+use App\Imports\BarangImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class BarangController extends Controller
 {
@@ -121,5 +123,24 @@ class BarangController extends Controller
         }
         $barang->delete();
         return Redirect::route('barangs.index')->with('success', 'Barang berhasil dihapus.');
+    }
+
+
+    /**
+     * Import Data Barang dari Excel
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:2048',
+        ]);
+
+        try {
+            Excel::import(new BarangImport, $request->file('file'));
+            
+            return back()->with('success', 'Import Selesai! Stok barang yang ada telah diakumulasikan, dan barang baru telah ditambahkan.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal import: ' . $e->getMessage());
+        }
     }
 }

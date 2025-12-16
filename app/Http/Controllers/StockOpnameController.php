@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use App\Enums\StatusOpname;
+use App\Imports\StockOpnameImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class StockOpnameController extends Controller
 {
@@ -189,5 +191,25 @@ class StockOpnameController extends Controller
         $opname->delete();
         
         return redirect()->route('stock-opname.index')->with('success', 'Sesi opname dibatalkan.');
+    }
+
+    /**
+     * Import Data SO dari Excel
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:2048',
+        ]);
+
+        try {
+            Excel::import(new StockOpnameImport, $request->file('file'));
+            
+            return redirect()->route('stock-opname.index')
+                ->with('success', 'Data Stock Opname berhasil diimport & Stok Master diperbarui!');
+                
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal import: ' . $e->getMessage());
+        }
     }
 }

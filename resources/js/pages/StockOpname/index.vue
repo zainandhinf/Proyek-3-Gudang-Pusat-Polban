@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Link, router, usePage } from "@inertiajs/vue3"; // Import usePage
+import { Link, router, usePage, useForm } from "@inertiajs/vue3"; // Import usePage
 import { ref, watch, computed } from "vue"; // Import computed
 import { throttle } from 'lodash';
 import { 
@@ -9,19 +9,21 @@ import {
     Edit, 
     Eye, 
     Play, 
-    Filter 
+    Filter,
+    Upload,         
+    FileSpreadsheet,
+    X               
 } from "lucide-vue-next";
 
 // Props
 const props = defineProps({ 
-    opnames: Object, // Ubah ke Object karena paginate return object
+    opnames: Object,
     filters: Object 
 });
 
 // User & Role Logic
 const page = usePage();
 const user = computed(() => page.props.auth.user);
-// Asumsi role operator adalah 'operator'
 const isOperator = computed(() => user.value.role === 'operator');
 
 // State Search
@@ -56,6 +58,19 @@ const formatDate = (dateString) => {
         minute: '2-digit'
     });
 };
+
+// --- LOGIC IMPORT ---
+const showImportModal = ref(false);
+const importForm = useForm({ file: null });
+
+const submitImport = () => {
+    importForm.post(route('stock-opname.import'), {
+        onSuccess: () => {
+            showImportModal.value = false;
+            importForm.reset();
+        },
+    });
+};
 </script>
 
 <template>
@@ -69,7 +84,24 @@ const formatDate = (dateString) => {
                 </p>
             </div>
 
+            <div v-if="$page.props.flash?.success" class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md">
+                {{ $page.props.flash.success }}
+            </div>
+            <div v-if="$page.props.flash?.error" class="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                {{ $page.props.flash.error }}
+            </div>
+
             <div v-if="isOperator" class="flex justify-end mt-6 gap-x-3">
+                <button @click="showImportModal = true" class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 shadow-sm transition font-medium text-sm">
+                    <Upload class="w-4 h-4 mr-2" />
+                    Import Excel
+                </button>
+
+                <a :href="route('laporan.stock-opname')" target="_blank" class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 shadow-sm transition font-medium text-sm">
+                    <FileSpreadsheet class="w-4 h-4 mr-2" />
+                    Laporan
+                </a>
+
                 <Link
                     :href="route('stock-opname.store')" 
                     method="post"
@@ -198,6 +230,54 @@ const formatDate = (dateString) => {
                     </div>
                 </div>
 
+            </div>
+        </div>
+
+        <div v-if="showImportModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 transition-opacity">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+                <div class="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
+                    <h3 class="font-bold text-gray-800">Import Stock Opname</h3>
+                    <button @click="showImportModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-1 transition">
+                        <X class="w-5 h-5" />
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-5 text-xs text-orange-800">
+                        <p class="font-bold mb-1 flex items-center gap-1">
+                            <FileSpreadsheet class="w-3 h-3" /> Perhatian:
+                        </p>
+                        <ul class="list-disc list-inside space-y-0.5 ml-1">
+                            <li>Gunakan file Excel hasil export <strong>Laporan Stock Opname</strong>.</li>
+                            <li>Import ini akan <strong>MENGUBAH STOK MASTER</strong> sesuai kolom "Stok Fisik".</li>
+                            <li>Status transaksi akan otomatis menjadi <strong>Selesai</strong>.</li>
+                        </ul>
+                    </div>
+
+                    <form @submit.prevent="submitImport">
+                        <div class="mb-5">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Pilih File Excel (.xlsx)</label>
+                            <input type="file" @input="importForm.file = $event.target.files[0]" accept=".xlsx, .xls"
+                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 transition cursor-pointer border border-gray-300 rounded-lg" />
+                            <div v-if="importForm.errors.file" class="text-red-500 text-xs mt-1">{{ importForm.errors.file }}</div>
+                        </div>
+
+                        <div v-if="importForm.progress" class="w-full bg-gray-100 rounded-full h-2 mb-4 overflow-hidden">
+                            <div class="bg-teal-600 h-2 rounded-full transition-all duration-300" :style="{ width: importForm.progress.percentage + '%' }"></div>
+                        </div>
+
+                        <div class="flex justify-end gap-3">
+                            <button type="button" @click="showImportModal = false" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition">
+                                Batal
+                            </button>
+                            <button type="submit" :disabled="importForm.processing" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium shadow-sm flex items-center transition disabled:opacity-50">
+                                <Upload v-if="!importForm.processing" class="w-4 h-4 mr-2" />
+                                <span v-else class="mr-2">Mengupload...</span>
+                                Upload
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </AuthenticatedLayout>

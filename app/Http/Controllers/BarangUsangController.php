@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use App\Imports\BarangUsangImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class BarangUsangController extends Controller
 {
@@ -88,5 +90,23 @@ class BarangUsangController extends Controller
     {
         BarangUsang::findOrFail($id)->delete();
         return redirect()->back()->with('success', 'Laporan berhasil dihapus.');
+    }
+
+
+    /**
+     * Import Data Barang Usang dari Excel
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:2048',
+        ]);
+
+        try {
+            Excel::import(new BarangUsangImport, $request->file('file'));
+            return back()->with('success', 'Laporan Barang Rusak berhasil diimport & Stok dikurangi!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal import: ' . $e->getMessage());
+        }
     }
 }

@@ -2,32 +2,33 @@
 
 namespace App\Exports;
 
-use Illuminate\Contracts\View\View;
-use Maatwebsite\Excel\Concerns\FromView;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithStyles;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
+use Maatwebsite\Excel\Concerns\Exportable;
 
-class LaporanBarangUsangExport implements FromView, ShouldAutoSize, WithStyles
+class LaporanBarangUsangExport implements WithMultipleSheets
 {
-    protected $data;
+    use Exportable;
 
-    public function __construct($data)
+    protected $laporan;
+
+    // Constructor menerima Collection data Header Barang Usang
+    public function __construct($laporan)
     {
-        $this->data = $data;
+        $this->laporan = $laporan;
     }
 
-    public function view(): View
+    /**
+     * @return array
+     */
+    public function sheets(): array
     {
-        return view('exports.laporan_barang_usang_excel', [
-            'data' => $this->data
-        ]);
-    }
+        $sheets = [];
 
-    public function styles(Worksheet $sheet)
-    {
-        return [
-             1 => ['font' => ['family' => 'Arial']],
-        ];
+        foreach ($this->laporan as $item) {
+            // Panggil class per-sheet untuk setiap dokumen laporan
+            $sheets[] = new BarangUsangPerSheetExport($item);
+        }
+
+        return $sheets;
     }
 }

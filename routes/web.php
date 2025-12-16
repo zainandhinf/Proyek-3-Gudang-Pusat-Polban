@@ -125,18 +125,22 @@ Route::middleware('auth')->group(function () {
     // Laporan Routes
     Route::get('/laporan/mutasi', [LaporanController::class, 'mutasi'])->name('laporan.mutasi');
     Route::get('/laporan/mutasi/export', [LaporanController::class, 'exportMutasi'])->name('laporan.mutasi.export');
+    Route::post('/mutasi-barang/import', [MutasiBarangController::class, 'import'])->name('mutasi-barang.import');
 
     Route::get('/laporan/permintaan', [LaporanController::class, 'permintaan'])->name('laporan.permintaan');
     Route::get('/laporan/permintaan/export', [LaporanController::class, 'exportPermintaan'])->name('laporan.permintaan.export');
 
     Route::get('/laporan/stock-opname', [LaporanController::class, 'stockOpname'])->name('laporan.stock-opname');
     Route::get('/laporan/stock-opname/export', [LaporanController::class, 'exportStockOpname'])->name('laporan.stock-opname.export');
+    Route::post('/stock-opname/import', [StockOpnameController::class, 'import'])->name('stock-opname.import');
 
     Route::get('/laporan/barang-usang', [LaporanController::class, 'barangUsang'])->name('laporan.barang-usang');
     Route::get('/laporan/barang-usang/export', [LaporanController::class, 'exportBarangUsang'])->name('laporan.barang-usang.export');
+    Route::post('/barang-usang/import', [BarangUsangController::class, 'import'])->name('barang-usang.import');
 
     Route::get('/laporan/data-barang', [LaporanController::class, 'dataBarang'])->name('laporan.data-barang');
     Route::get('/laporan/data-barang/export', [LaporanController::class, 'exportDataBarang'])->name('laporan.data-barang.export');
+    Route::post('/barangs/import', [BarangController::class, 'import'])->name('barangs.import');
 });
 
 

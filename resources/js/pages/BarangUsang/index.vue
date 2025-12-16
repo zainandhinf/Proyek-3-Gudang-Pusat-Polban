@@ -1,9 +1,9 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { ref, watch, computed } from 'vue';
 import { throttle } from 'lodash';
-import { Search, Plus, Eye, Trash2 } from 'lucide-vue-next';
+import { Search, Plus, Eye, Trash2, Upload, FileSpreadsheet, X } from 'lucide-vue-next';
 
 const props = defineProps({
   barangUsangs: Object,
@@ -31,6 +31,19 @@ const formatDate = (dateString) => {
         year: 'numeric',
     });
 };
+
+// --- LOGIC IMPORT ---
+const showImportModal = ref(false);
+const importForm = useForm({ file: null });
+
+const submitImport = () => {
+    importForm.post(route('barang-usang.import'), {
+        onSuccess: () => {
+            showImportModal.value = false;
+            importForm.reset();
+        },
+    });
+};
 </script>
 
 <template>
@@ -38,11 +51,29 @@ const formatDate = (dateString) => {
   <AuthenticatedLayout>
     <div class="py-8 px-4 md:px-6 lg:px-8">
       
-      <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 class="text-3xl font-bold text-gray-900">Catatan Barang Usang</h1>
-          <p class="mt-1 text-sm text-gray-600">Dokumen pencatatan kerusakan atau penghapusan aset.</p>
-        </div>
+      <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">Catatan Barang Usang</h1>
+        <p class="mt-1 text-sm text-gray-600">Dokumen pencatatan kerusakan atau penghapusan aset.</p>
+      </div>
+
+      <div v-if="$page.props.flash?.success" class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md">
+          {{ $page.props.flash.success }}
+      </div>
+      <div v-if="$page.props.flash?.error" class="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
+          {{ $page.props.flash.error }}
+      </div>
+      
+      <div class="flex justify-end mt-6 gap-x-3">
+         <button @click="showImportModal = true" class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 shadow-sm transition font-medium text-sm">
+            <Upload class="w-4 h-4 mr-2" />
+            Import Excel
+         </button>
+
+         <a :href="route('laporan.barang-usang')" target="_blank" class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 shadow-sm transition font-medium text-sm">
+            <FileSpreadsheet class="w-4 h-4 mr-2" />
+            Laporan
+         </a>
+
         <Link :href="route('barang-usang.create')" 
           class="flex items-center px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 shadow-sm transition font-medium text-sm">
           <Plus class="w-4 h-4 mr-2" /> Buat Catatan Baru
@@ -114,5 +145,49 @@ const formatDate = (dateString) => {
 
       </div>
     </div>
+
+    <div v-if="showImportModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 transition-opacity">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+                <div class="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
+                    <h3 class="font-bold text-gray-800">Import Barang Rusak</h3>
+                    <button @click="showImportModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-1 transition">
+                        <X class="w-5 h-5" />
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-5 text-xs text-red-800">
+                        <p class="font-bold mb-1 flex items-center gap-1">
+                            <FileSpreadsheet class="w-3 h-3" /> Perhatian:
+                        </p>
+                        <ul class="list-disc list-inside space-y-0.5 ml-1">
+                            <li>Gunakan file Excel hasil export <strong>Laporan Barang Rusak</strong>.</li>
+                            <li>Import ini akan <strong>MENGURANGI STOK MASTER</strong> sesuai jumlah kerusakan.</li>
+                            <li>Pastikan Nama Barang di file sama dengan di sistem.</li>
+                        </ul>
+                    </div>
+
+                    <form @submit.prevent="submitImport">
+                        <div class="mb-5">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Pilih File Excel (.xlsx)</label>
+                            <input type="file" @input="importForm.file = $event.target.files[0]" accept=".xlsx, .xls"
+                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 transition cursor-pointer border border-gray-300 rounded-lg" />
+                            <div v-if="importForm.errors.file" class="text-red-500 text-xs mt-1">{{ importForm.errors.file }}</div>
+                        </div>
+
+                        <div class="flex justify-end gap-3">
+                            <button type="button" @click="showImportModal = false" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition">
+                                Batal
+                            </button>
+                            <button type="submit" :disabled="importForm.processing" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium shadow-sm flex items-center transition disabled:opacity-50">
+                                <Upload v-if="!importForm.processing" class="w-4 h-4 mr-2" />
+                                <span v-else class="mr-2">Proses...</span>
+                                Upload
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
   </AuthenticatedLayout>
 </template>
