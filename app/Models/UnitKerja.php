@@ -12,9 +12,11 @@ class UnitKerja extends Model
     use HasFactory;
     protected $guarded = [];
 
-    protected $casts = [
-        'tipe_unit' => TipeUnit::class,
-    ];
+    protected $table = 'unit_kerjas';
+
+    // protected $casts = [
+    //     'tipe_unit' => TipeUnit::class,
+    // ];
 
     public function users(): HasMany
     {
